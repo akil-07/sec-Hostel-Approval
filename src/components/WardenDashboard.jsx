@@ -71,39 +71,117 @@ const WardenDashboard = ({ user, onLogout }) => {
                 </div>
             ) : (
                 <div style={{ display: 'grid', gap: '1rem' }}>
-                    {filteredRequests.map((req, idx) => (
-                        <div key={idx} className="glass-card">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                                <div>
-                                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{req['Student Name'] || req['name']} <span style={{ fontSize: '0.9rem', fontWeight: 'normal', color: 'var(--text-secondary)' }}>({req['Register Number or Admission Number'] || req['regNo']})</span></div>
-                                    <div style={{ color: '#ec4899', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Room: {req['Room Number'] || req['room']} • {req['Year of study'] || req['year']} Year {req['Department'] || req['dept']}</div>
-                                </div>
-                                <div className={`status-badge ${(req['Approval'] || 'Pending') === 'Approved' ? 'status-approved' :
+                    {filteredRequests.map((req, idx) => {
+                        const formatDate = (dateString) => {
+                            if (!dateString) return '';
+                            const date = new Date(dateString);
+                            if (isNaN(date.getTime())) return dateString;
+                            return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+                        };
+
+                        const fromDate = formatDate(req['Leaving date']);
+                        const toDate = formatDate(req['Date of return'] || req['Date of Return']);
+                        const dateRange = fromDate && toDate ? `${fromDate} - ${toDate}` : (fromDate || toDate);
+
+                        return (
+                            <div key={idx} className="glass-card">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                                    <div>
+                                        <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
+                                            {req['Student Name']}
+                                            <span style={{ fontSize: '0.9rem', fontWeight: 'normal', color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>
+                                                ({req['Register Number']})
+                                            </span>
+                                        </div>
+                                        <div style={{ color: '#ec4899', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                                            Room: {req['Room']} • {req['Year']} Year {req['Dept']}
+                                        </div>
+                                    </div>
+                                    <div className={`status-badge ${(req['Approval'] || 'Pending') === 'Approved' ? 'status-approved' :
                                         (req['Approval'] || 'Pending') === 'Rejected' ? 'status-rejected' : 'status-pending'
-                                    }`}>
-                                    {req['Approval'] || 'Pending'}
+                                        }`}>
+                                        {req['Approval'] || 'Pending'}
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="grid-2" style={{ fontSize: '0.95rem', color: '#cbd5e1', marginBottom: '1rem' }}>
-                                <div><strong>Reason:</strong> {req['Reason'] || req['reason']}</div>
-                                <div><strong>Dates:</strong> {req['Leaving date'] || req['leavingDate']} to {req['Date of Return'] || req['returnDate']}</div>
-                                <div><strong>Parents Contact:</strong> {req['Parent Mobile Number'] || req['parentMobile']}</div>
-                                <div><strong>Student Contact:</strong> {req['Student Mobile Number'] || req['studentMobile']}</div>
-                            </div>
+                                <div className="grid-2" style={{ fontSize: '0.95rem', color: '#cbd5e1', marginBottom: '1rem' }}>
+                                    <div><strong>Reason:</strong> {req['Reason']}</div>
+                                    <div><strong>Dates:</strong> {dateRange}</div>
+                                    <div><strong>Parents Contact:</strong> {req['Parent Mobile']}</div>
+                                    <div><strong>Student Contact:</strong> {req['Student Mobile']}</div>
+                                </div>
 
-                            {(req['Approval'] || 'Pending') === 'Pending' ? (
-                                <div style={{ display: 'flex', gap: '1rem', borderTop: '1px solid var(--card-border)', paddingTop: '1rem' }}>
-                                    <button className="btn" style={{ background: '#10b981', color: 'white' }} onClick={() => handleAction(req, 'Approved')}>Approve</button>
-                                    <button className="btn" style={{ background: '#ef4444', color: 'white' }} onClick={() => handleAction(req, 'Rejected')}>Reject</button>
-                                </div>
-                            ) : (
-                                <div style={{ borderTop: '1px solid var(--card-border)', paddingTop: '1rem', color: '#cbd5e1' }}>
-                                    <strong>Remarks:</strong> {req['Remarks'] || 'No remarks'}
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                                {/* Display Signed Letter Logic */}
+                                {(() => {
+                                    const fileUrl = req['letter imqge'] || req['letter image'] || req['Letter Image URL'] || req['fileUrl'];
+                                    if (fileUrl && fileUrl.startsWith('http')) {
+                                        let previewUrl = fileUrl;
+                                        // Attempt to convert Google Drive view links to direct image links
+                                        if (fileUrl.includes('drive.google.com')) {
+                                            let id = null;
+                                            if (fileUrl.includes('/d/')) {
+                                                const match = fileUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                                                if (match) id = match[1];
+                                            } else if (fileUrl.includes('id=')) {
+                                                const match = fileUrl.match(/id=([a-zA-Z0-9_-]+)/);
+                                                if (match) id = match[1];
+                                            }
+                                            if (id) previewUrl = `https://drive.google.com/uc?export=view&id=${id}`;
+                                        }
+
+                                        return (
+                                            <div style={{ marginBottom: '1rem' }}>
+                                                <div style={{
+                                                    marginBottom: '0.75rem',
+                                                    borderRadius: '8px',
+                                                    overflow: 'hidden',
+                                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                    background: 'rgba(0, 0, 0, 0.2)'
+                                                }}>
+                                                    <img
+                                                        src={previewUrl}
+                                                        alt="Permission Letter"
+                                                        style={{ width: '100%', maxHeight: '300px', objectFit: 'contain', display: 'block' }}
+                                                        onError={(e) => { e.target.style.display = 'none'; }}
+                                                    />
+                                                </div>
+                                                <a
+                                                    href={fileUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="btn"
+                                                    style={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.5rem',
+                                                        background: 'rgba(59, 130, 246, 0.2)',
+                                                        color: '#60a5fa',
+                                                        textDecoration: 'none',
+                                                        fontSize: '0.9rem',
+                                                        padding: '0.5rem 1rem'
+                                                    }}
+                                                >
+                                                    <span>📄</span> View Full Document
+                                                </a>
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })()}
+
+                                {(req['Approval'] || 'Pending') === 'Pending' ? (
+                                    <div style={{ display: 'flex', gap: '1rem', borderTop: '1px solid var(--card-border)', paddingTop: '1rem' }}>
+                                        <button className="btn" style={{ background: '#10b981', color: 'white' }} onClick={() => handleAction(req, 'Approved')}>Approve</button>
+                                        <button className="btn" style={{ background: '#ef4444', color: 'white' }} onClick={() => handleAction(req, 'Rejected')}>Reject</button>
+                                    </div>
+                                ) : (
+                                    <div style={{ borderTop: '1px solid var(--card-border)', paddingTop: '1rem', color: '#cbd5e1' }}>
+                                        <strong>Remarks:</strong> {req['Remarks'] || 'No remarks'}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             )}
 

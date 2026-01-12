@@ -77,26 +77,114 @@ const StudentDashboard = ({ user, onLogout }) => {
                         </div>
                     ) : (
                         <div style={{ display: 'grid', gap: '1rem' }}>
-                            {requests.map((req, idx) => (
-                                <div key={idx} className="glass-card" style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                    <div>
-                                        <div style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.5rem' }}>{req['Reason'] || req['reason']}</div>
-                                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                                            {req['Leaving date'] || req['leavingDate']} — {req['Date of Return'] || req['returnDate']}
+                            {requests.map((req, idx) => {
+                                const formatDate = (dateString) => {
+                                    if (!dateString) return '';
+                                    const date = new Date(dateString);
+                                    if (isNaN(date.getTime())) return dateString; // Return original if not a valid date
+                                    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+                                };
+
+                                const fromDate = formatDate(req['Leaving date'] || req['leavingDate']);
+                                const toDate = formatDate(req['Date of Return'] || req['returnDate']);
+                                const dateRange = fromDate && toDate ? `${fromDate} - ${toDate}` : (fromDate || toDate);
+
+                                return (
+                                    <div key={idx} className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                            <div>
+                                                <div style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                                                    {dateRange || 'Date Not Specified'}
+                                                </div>
+                                                <div style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
+                                                    {req['Reason'] || req['reason']}
+                                                </div>
+                                            </div>
+                                            <div className={`status-badge ${(req['Approval'] || 'Pending') === 'Approved' ? 'status-approved' :
+                                                (req['Approval'] || 'Pending') === 'Rejected' ? 'status-rejected' : 'status-pending'
+                                                }`}>
+                                                {req['Approval'] || 'Pending'}
+                                            </div>
                                         </div>
+
+                                        {/* Display Signed Letter Logic */}
+                                        {(() => {
+                                            const fileUrl = req['letter imqge'] || req['letter image'] || req['Letter Image URL'] || req['fileUrl'];
+                                            if (fileUrl && fileUrl.startsWith('http')) {
+                                                let previewUrl = fileUrl;
+                                                // Attempt to convert Google Drive view links to direct image links
+                                                if (fileUrl.includes('drive.google.com')) {
+                                                    let id = null;
+                                                    if (fileUrl.includes('/d/')) {
+                                                        const match = fileUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                                                        if (match) id = match[1];
+                                                    } else if (fileUrl.includes('id=')) {
+                                                        const match = fileUrl.match(/id=([a-zA-Z0-9_-]+)/);
+                                                        if (match) id = match[1];
+                                                    }
+                                                    if (id) previewUrl = `https://drive.google.com/uc?export=view&id=${id}`;
+                                                }
+
+                                                return (
+                                                    <div style={{ marginBottom: '1rem' }}>
+                                                        <div style={{
+                                                            marginBottom: '0.75rem',
+                                                            borderRadius: '8px',
+                                                            overflow: 'hidden',
+                                                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                            background: 'rgba(0, 0, 0, 0.2)'
+                                                        }}>
+                                                            <img
+                                                                src={previewUrl}
+                                                                alt="Permission Letter"
+                                                                style={{ width: '100%', maxHeight: '300px', objectFit: 'contain', display: 'block' }}
+                                                                onError={(e) => { e.target.style.display = 'none'; }}
+                                                            />
+                                                        </div>
+                                                        <a
+                                                            href={fileUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="btn"
+                                                            style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '0.5rem',
+                                                                background: 'rgba(59, 130, 246, 0.2)',
+                                                                color: '#60a5fa',
+                                                                textDecoration: 'none',
+                                                                fontSize: '0.9rem',
+                                                                padding: '0.5rem 1rem'
+                                                            }}
+                                                        >
+                                                            <span>📄</span> View Full Document
+                                                        </a>
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
+                                        })()}
+
                                         {req['Remarks'] && (
-                                            <div style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: '#cbd5e1' }}>
-                                                <span style={{ fontWeight: 'bold' }}>Warden:</span> {req['Remarks']}
+                                            <div style={{
+                                                marginTop: '0.5rem',
+                                                padding: '0.75rem',
+                                                background: 'rgba(255,255,255,0.05)',
+                                                borderRadius: '0.5rem',
+                                                borderLeft: '3px solid var(--accent-primary)',
+                                                fontSize: '0.9rem'
+                                            }}>
+                                                <div style={{ fontWeight: '600', color: 'var(--accent-primary)', marginBottom: '0.25rem', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                    Warden's Remarks
+                                                </div>
+                                                <div style={{ color: '#e2e8f0', fontStyle: 'italic' }}>
+                                                    "{req['Remarks']}"
+                                                </div>
                                             </div>
                                         )}
                                     </div>
-                                    <div className={`status-badge ${(req['Approval'] || 'Pending') === 'Approved' ? 'status-approved' :
-                                            (req['Approval'] || 'Pending') === 'Rejected' ? 'status-rejected' : 'status-pending'
-                                        }`}>
-                                        {req['Approval'] || 'Pending'}
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </>

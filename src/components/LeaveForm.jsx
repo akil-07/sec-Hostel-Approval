@@ -16,11 +16,30 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
         leavingDate: '',
         outTime: '',
         returnDate: '',
-        letterSigned: 'No'
+        letterSigned: 'No',
+        fileData: '',
+        fileName: '',
+        mimeType: ''
     });
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFormData({
+                    ...formData,
+                    fileData: reader.result,
+                    fileName: file.name,
+                    mimeType: file.type
+                });
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     const handleSubmit = (e) => {
@@ -95,12 +114,20 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
                     </div>
                 </div>
 
-                <div>
-                    <label className="block text-sm mb-1 text-gray-400">Letter Signed by HoD?</label>
-                    <select name="letterSigned" onChange={handleChange} required>
-                        <option value="No">No</option>
-                        <option value="Yes">Yes</option>
-                    </select>
+                <div className="grid-2">
+                    <div>
+                        <label className="block text-sm mb-1 text-gray-400">Letter Signed by HoD?</label>
+                        <select name="letterSigned" onChange={handleChange} required>
+                            <option value="No">No</option>
+                            <option value="Yes">Yes</option>
+                        </select>
+                    </div>
+                    {formData.letterSigned === 'Yes' && (
+                        <div>
+                            <label className="block text-sm mb-1 text-gray-400">Upload Letter Photo</label>
+                            <input type="file" accept="image/*,application/pdf" onChange={handleFileChange} required />
+                        </div>
+                    )}
                 </div>
 
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
