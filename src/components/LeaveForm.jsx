@@ -48,20 +48,20 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
     };
 
     return (
-        <div className="glass-card">
-            <h3 style={{ marginTop: 0, marginBottom: '1.5rem' }}>New Leave Application</h3>
+        <div className="card">
+            <h3 style={{ marginTop: 0, marginBottom: '1.5rem', color: 'var(--primary)' }}>New Leave Application</h3>
             <form onSubmit={handleSubmit}>
                 <div className="grid-2">
                     <div>
-                        <label className="block text-sm mb-1 text-gray-400">Register Number</label>
-                        <input name="regNo" value={formData.regNo} readOnly style={{ opacity: 0.7 }} />
+                        <label>Register Number</label>
+                        <input name="regNo" value={formData.regNo} readOnly style={{ opacity: 0.7, cursor: 'not-allowed' }} />
                     </div>
                     <div>
-                        <label className="block text-sm mb-1 text-gray-400">Student Name</label>
+                        <label>Student Name</label>
                         <input name="name" placeholder="Full Name" onChange={handleChange} required />
                     </div>
                     <div>
-                        <label className="block text-sm mb-1 text-gray-400">Year of Study</label>
+                        <label>Year of Study</label>
                         <select name="year" onChange={handleChange} required>
                             <option value="">Select Year</option>
                             <option value="1">1st Year</option>
@@ -71,52 +71,54 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm mb-1 text-gray-400">Department</label>
+                        <label>Department</label>
                         <input name="dept" placeholder="e.g. CSE" onChange={handleChange} required />
                     </div>
                     <div>
-                        <label className="block text-sm mb-1 text-gray-400">Student Mobile</label>
+                        <label>Student Mobile</label>
                         <input name="studentMobile" placeholder="Number" type="tel" onChange={handleChange} required />
                     </div>
                     <div>
-                        <label className="block text-sm mb-1 text-gray-400">Parent Mobile</label>
+                        <label>Parent Mobile</label>
                         <input name="parentMobile" placeholder="Number" type="tel" onChange={handleChange} required />
                     </div>
                     <div>
-                        <label className="block text-sm mb-1 text-gray-400">Room Number</label>
+                        <label>Room Number</label>
                         <input name="room" placeholder="Room No" onChange={handleChange} required />
                     </div>
                     <div>
-                        <label className="block text-sm mb-1 text-gray-400">Floor In-Charge</label>
+                        <label>Floor In-Charge</label>
                         <input name="floorInCharge" placeholder="Name" onChange={handleChange} required />
                     </div>
                 </div>
 
-                <label className="block text-sm mb-1 text-gray-400">Reason for Leave</label>
-                <textarea name="reason" rows="2" onChange={handleChange} required></textarea>
+                <div className="mt-4">
+                    <label>Reason for Leave</label>
+                    <textarea name="reason" rows="3" onChange={handleChange} required placeholder="Briefly explain why you are taking leave..."></textarea>
+                </div>
 
-                <div className="grid-2">
+                <div className="grid-2 mt-4">
                     <div>
-                        <label className="block text-sm mb-1 text-gray-400">Leaving Date</label>
+                        <label>Leaving Date</label>
                         <input name="leavingDate" type="date" onChange={handleChange} required />
                     </div>
                     <div>
-                        <label className="block text-sm mb-1 text-gray-400">Out Time</label>
+                        <label>Out Time</label>
                         <input name="outTime" type="time" onChange={handleChange} required />
                     </div>
                     <div>
-                        <label className="block text-sm mb-1 text-gray-400">Return Date</label>
+                        <label>Return Date</label>
                         <input name="returnDate" type="date" onChange={handleChange} required />
                     </div>
                     <div>
-                        <label className="block text-sm mb-1 text-gray-400">No. of Days</label>
-                        <input name="numDays" type="number" onChange={handleChange} required />
+                        <label>No. of Days</label>
+                        <input name="numDays" type="number" min="1" onChange={handleChange} required />
                     </div>
                 </div>
 
-                <div className="grid-2">
+                <div className="grid-2 mt-4">
                     <div>
-                        <label className="block text-sm mb-1 text-gray-400">Letter Signed by HoD?</label>
+                        <label>Letter Signed by HoD?</label>
                         <select name="letterSigned" onChange={handleChange} required>
                             <option value="No">No</option>
                             <option value="Yes">Yes</option>
@@ -124,14 +126,21 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
                     </div>
                     {formData.letterSigned === 'Yes' && (
                         <div>
-                            <label className="block text-sm mb-1 text-gray-400">Upload Letter Photo</label>
-                            <input type="file" accept="image/*,application/pdf" onChange={handleFileChange} required />
+                            <label>Upload Letter Photo</label>
+                            <input
+                                type="file"
+                                accept="image/*,application/pdf"
+                                onChange={handleFileChange}
+                                required
+                                style={{ padding: '0.4rem', fontSize: '0.85rem' }}
+                            />
+                            <small className="text-muted">Supports Images or PDF</small>
                         </div>
                     )}
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                    <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Submit Request</button>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid var(--card-border)' }}>
+                    <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Submit Application</button>
                     <button type="button" className="btn btn-secondary" onClick={onCancel}>Cancel</button>
                 </div>
             </form>

@@ -11,18 +11,9 @@ const StudentDashboard = ({ user, onLogout }) => {
     const loadData = async () => {
         setLoading(true);
         const allRequests = await fetchRequests();
-        // Filter by student Reg No (assuming 2nd column index 1, or property 'Register Number')
-        // My api.js maps headers to keys. The keys come from first row of sheet. 
-        // Usually 'Register Number' or 'Timestamp' etc.
-        // I should check what keys I used in GAS.
-        // In GAS: headers.forEach... It uses the actual header text from the Sheet. 
-        // The user image shows "Register Number or Admission Number". 
-        // I need to be careful with keys. I'll dump the keys to console if needed, but let's assume we filter safely.
-        // Or I'll filter by matching `regNo` or checking if it includes the string.
 
-        // Actually, let's just do client side filtering loosely.
+        // Client side filtering
         const myRequests = allRequests.filter(r => {
-            // Find the key that looks like register number
             const val = Object.values(r).join(' ').toLowerCase();
             return val.includes(user.identifier.toLowerCase());
         });
@@ -42,15 +33,13 @@ const StudentDashboard = ({ user, onLogout }) => {
     };
 
     return (
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
+        <div className="container">
+            <header className="page-header">
                 <div>
-                    <h1 style={{ margin: 0, fontSize: '2rem', background: 'linear-gradient(to right, #a855f7, #ec4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                        Student Portal
-                    </h1>
-                    <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Welcome, {user.identifier}</p>
+                    <h1 className="page-title">Student Portal</h1>
+                    <p className="page-subtitle">Welcome, <span style={{ color: 'var(--primary)' }}>{user.identifier}</span></p>
                 </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
                     <button className="btn btn-secondary" onClick={loadData}>Refresh</button>
                     <button className="btn btn-secondary" onClick={onLogout}>Logout</button>
                 </div>
@@ -64,15 +53,19 @@ const StudentDashboard = ({ user, onLogout }) => {
                 />
             ) : (
                 <>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                        <h2 style={{ margin: 0 }}>My Leave History</h2>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <h2 style={{ fontSize: '1.5rem', margin: 0 }}>My Leave History</h2>
                         <button className="btn btn-primary" onClick={() => setShowForm(true)}>+ New Request</button>
                     </div>
 
                     {loading ? (
-                        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>Loading...</div>
+                        <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
+                            <div style={{ marginBottom: '1rem', fontSize: '2rem' }}>⌛</div>
+                            Loading your requests...
+                        </div>
                     ) : requests.length === 0 ? (
-                        <div className="glass-card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+                        <div className="card" style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
+                            <div style={{ marginBottom: '1rem', fontSize: '2.5rem', opacity: 0.5 }}>📭</div>
                             No leave requests found.
                         </div>
                     ) : (
@@ -81,29 +74,30 @@ const StudentDashboard = ({ user, onLogout }) => {
                                 const formatDate = (dateString) => {
                                     if (!dateString) return '';
                                     const date = new Date(dateString);
-                                    if (isNaN(date.getTime())) return dateString; // Return original if not a valid date
+                                    if (isNaN(date.getTime())) return dateString;
                                     return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
                                 };
 
                                 const fromDate = formatDate(req['Leaving date'] || req['leavingDate']);
                                 const toDate = formatDate(req['Date of Return'] || req['returnDate']);
                                 const dateRange = fromDate && toDate ? `${fromDate} - ${toDate}` : (fromDate || toDate);
+                                const status = req['Approval'] || 'Pending';
 
                                 return (
-                                    <div key={idx} className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    <div key={idx} className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                             <div>
-                                                <div style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                                                <div style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
                                                     {dateRange || 'Date Not Specified'}
                                                 </div>
                                                 <div style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
                                                     {req['Reason'] || req['reason']}
                                                 </div>
                                             </div>
-                                            <div className={`status-badge ${(req['Approval'] || 'Pending') === 'Approved' ? 'status-approved' :
-                                                (req['Approval'] || 'Pending') === 'Rejected' ? 'status-rejected' : 'status-pending'
+                                            <div className={`status-badge ${status === 'Approved' ? 'status-approved' :
+                                                    status === 'Rejected' ? 'status-rejected' : 'status-pending'
                                                 }`}>
-                                                {req['Approval'] || 'Pending'}
+                                                {status}
                                             </div>
                                         </div>
 
@@ -126,18 +120,20 @@ const StudentDashboard = ({ user, onLogout }) => {
                                                 }
 
                                                 return (
-                                                    <div style={{ marginBottom: '1rem' }}>
+                                                    <div style={{ marginTop: '0.5rem' }}>
                                                         <div style={{
                                                             marginBottom: '0.75rem',
-                                                            borderRadius: '8px',
+                                                            borderRadius: 'var(--radius-md)',
                                                             overflow: 'hidden',
-                                                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                                                            background: 'rgba(0, 0, 0, 0.2)'
+                                                            border: '1px solid var(--card-border)',
+                                                            background: 'rgba(0, 0, 0, 0.2)',
+                                                            maxWidth: '200px'
                                                         }}>
                                                             <img
                                                                 src={previewUrl}
                                                                 alt="Permission Letter"
-                                                                style={{ width: '100%', maxHeight: '300px', objectFit: 'contain', display: 'block' }}
+                                                                style={{ width: '100%', maxHeight: '150px', objectFit: 'cover', display: 'block', cursor: 'pointer' }}
+                                                                onClick={() => window.open(fileUrl, '_blank')}
                                                                 onError={(e) => { e.target.style.display = 'none'; }}
                                                             />
                                                         </div>
@@ -145,19 +141,16 @@ const StudentDashboard = ({ user, onLogout }) => {
                                                             href={fileUrl}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="btn"
+                                                            className="text-sm"
                                                             style={{
                                                                 display: 'inline-flex',
                                                                 alignItems: 'center',
                                                                 gap: '0.5rem',
-                                                                background: 'rgba(59, 130, 246, 0.2)',
-                                                                color: '#60a5fa',
+                                                                color: 'var(--primary)',
                                                                 textDecoration: 'none',
-                                                                fontSize: '0.9rem',
-                                                                padding: '0.5rem 1rem'
                                                             }}
                                                         >
-                                                            <span>📄</span> View Full Document
+                                                            <span>📄</span> View Full Letter
                                                         </a>
                                                     </div>
                                                 );
@@ -168,16 +161,16 @@ const StudentDashboard = ({ user, onLogout }) => {
                                         {req['Remarks'] && (
                                             <div style={{
                                                 marginTop: '0.5rem',
-                                                padding: '0.75rem',
-                                                background: 'rgba(255,255,255,0.05)',
-                                                borderRadius: '0.5rem',
-                                                borderLeft: '3px solid var(--accent-primary)',
+                                                padding: '1rem',
+                                                background: 'rgba(0,0,0,0.2)',
+                                                borderRadius: 'var(--radius-md)',
+                                                borderLeft: '3px solid var(--primary)',
                                                 fontSize: '0.9rem'
                                             }}>
-                                                <div style={{ fontWeight: '600', color: 'var(--accent-primary)', marginBottom: '0.25rem', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                <div style={{ fontWeight: '600', color: 'var(--primary)', marginBottom: '0.25rem', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                                     Warden's Remarks
                                                 </div>
-                                                <div style={{ color: '#e2e8f0', fontStyle: 'italic' }}>
+                                                <div style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>
                                                     "{req['Remarks']}"
                                                 </div>
                                             </div>
