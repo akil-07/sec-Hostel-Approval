@@ -1,28 +1,28 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  /* Professional Dark Theme Palette (Slate-like) */
-  --bg-color: #0f172a;
-  /* Slate 900 */
-  --bg-secondary: #1e293b;
-  /* Slate 800 */
-  --card-bg: #1e293b;
-  /* Slate 800 */
-  --card-border: #334155;
-  /* Slate 700 */
+  /* Mycamu-inspired Light Theme (Clean & Fresh) */
+  --bg-color: #f3f4f6;
+  /* Light gray background */
+  --bg-secondary: #ffffff;
+  /* White secondary/sidebar */
+  --card-bg: #ffffff;
+  /* White cards */
+  --card-border: #e2e8f0;
+  /* Light gray border */
 
-  --text-primary: #f8fafc;
-  /* Slate 50 */
-  --text-secondary: #94a3b8;
-  /* Slate 400 */
-  --text-tertiary: #64748b;
-  /* Slate 500 */
+  --text-primary: #1e293b;
+  /* Slate 800 - Deep dark blue/gray for primary text */
+  --text-secondary: #64748b;
+  /* Slate 500 - Medium gray for secondary text */
+  --text-tertiary: #94a3b8;
+  /* Slate 400 - Light gray for tertiary text */
 
-  --primary: #6366f1;
-  /* Indigo 500 */
-  --primary-hover: #4f46e5;
-  /* Indigo 600 */
-  --primary-light: rgba(99, 102, 241, 0.1);
+  --primary: #2563eb;
+  /* Blue 600 - Standard professional blue */
+  --primary-hover: #1d4ed8;
+  /* Blue 700 - Darker blue on hover */
+  --primary-light: rgba(37, 99, 235, 0.1);
 
   --danger: #ef4444;
   /* Red 500 */
@@ -43,6 +43,30 @@
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
   --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+[data-theme='dark'] {
+  /* Restored Dark Theme Palette */
+  --bg-color: #0f172a;
+  --bg-secondary: #1e293b;
+  --card-bg: #1e293b;
+  --card-border: #334155;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-tertiary: #64748b;
+
+  --primary: #6366f1;
+  /* Indigo 500 for better contrast in dark */
+  --primary-hover: #4f46e5;
+  --primary-light: rgba(99, 102, 241, 0.1);
+
+  --danger: #ef4444;
+  --danger-bg: rgba(239, 68, 68, 0.1);
+  --success: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.1);
+  --warning: #f59e0b;
+  --warning-bg: rgba(245, 158, 11, 0.1);
 }
 
 body {
@@ -300,6 +324,65 @@ textarea:focus {
   gap: 0.5rem;
 }
 
-.gap-4 {
-  gap: 1rem;
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .page-header>div:last-child {
+    width: 100%;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .page-header>div:last-child>button {
+    flex: 1;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 1rem;
+  }
+
+  .section-header>button {
+    width: 100%;
+  }
+}
+
+/* Utilities */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+/* Touch Targets */
+input,
+select,
+textarea,
+.btn {
+  min-height: 44px;
+  /* Minimum touch target size */
+}
+
+input,
+select,
+textarea {
+  padding: 0.6rem 0.75rem;
+  /* Larger tapping area */
+  font-size: 16px !important;
+  /* Prevent zoom on iOS */
 }

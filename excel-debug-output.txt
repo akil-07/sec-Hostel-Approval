@@ -1,0 +1,49 @@
+Sheet name: Sheet1
+
+=== Reading as array of arrays ===
+Total rows: 189
+First 10 rows:
+Row 0: ["NBF-120",25008132,"DHARSHAN BABU A "]
+Row 1: ["NBF-119",25015509,"DARUNBALA S"]
+Row 2: ["NBF-119",25009074,"V LINGESH PANDIAN "]
+Row 3: ["NBF-119",25008066,"ROSHAN IKTHITHAR M"]
+Row 4: ["NBF-119",25006617,"B.KEERTHIVASAN"]
+Row 5: ["NBF-119",25016374,"NITHIN KAVI A.R"]
+Row 6: ["NBF-119",25017732,"D R.GOKUL"]
+Row 7: []
+Row 8: ["NBF-101",25009816,"S PRAVEEN"]
+Row 9: ["NBF-101",25008479,"HARIHARAN V"]
+
+=== Reading as objects ===
+Total objects: 170
+First 5 objects:
+Object 0: {
+  "25008132": 25015509,
+  "NBF-120": "NBF-119",
+  "DHARSHAN BABU A ": "DARUNBALA S"
+}
+
+Object 1: {
+  "25008132": 25009074,
+  "NBF-120": "NBF-119",
+  "DHARSHAN BABU A ": "V LINGESH PANDIAN "
+}
+
+Object 2: {
+  "25008132": 25008066,
+  "NBF-120": "NBF-119",
+  "DHARSHAN BABU A ": "ROSHAN IKTHITHAR M"
+}
+
+Object 3: {
+  "25008132": 25006617,
+  "NBF-120": "NBF-119",
+  "DHARSHAN BABU A ": "B.KEERTHIVASAN"
+}
+
+Object 4: {
+  "25008132": 25016374,
+  "NBF-120": "NBF-119",
+  "DHARSHAN BABU A ": "NITHIN KAVI A.R"
+}
+

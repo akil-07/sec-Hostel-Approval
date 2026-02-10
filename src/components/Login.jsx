@@ -7,9 +7,16 @@ const Login = ({ onLogin }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (role === 'warden' && password !== 'admin123') {
-            alert("Invalid Warden Password (try 'admin123')");
-            return;
+        if (role === 'warden') {
+            const wardenCreds = {
+                'Pavithrakannan': 'pavi123',
+                'Somu': 'somu123',
+                'Raguram': 'ram123'
+            };
+            if (wardenCreds[identifier] !== password) {
+                alert(`Invalid Password for Warden ${identifier}`);
+                return;
+            }
         }
         onLogin(role, identifier);
     };
@@ -30,15 +37,29 @@ const Login = ({ onLogin }) => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '2rem', background: 'var(--bg-color)', padding: '0.25rem', borderRadius: 'var(--radius-md)' }}>
                     <button
-                        className={`btn ${role === 'student' ? 'btn-primary' : 'btn-secondary'}`}
-                        style={{ border: 'none', borderRadius: 'var(--radius-sm)' }}
+                        className={`btn`}
+                        style={{
+                            border: 'none',
+                            borderRadius: 'var(--radius-sm)',
+                            backgroundColor: role === 'student' ? 'var(--card-bg)' : 'transparent',
+                            color: role === 'student' ? 'var(--primary)' : 'var(--text-secondary)',
+                            fontWeight: role === 'student' ? '600' : '500',
+                            boxShadow: role === 'student' ? 'var(--shadow-sm)' : 'none'
+                        }}
                         onClick={() => setRole('student')}
                     >
                         Student
                     </button>
                     <button
-                        className={`btn ${role === 'warden' ? 'btn-primary' : 'btn-secondary'}`}
-                        style={{ border: 'none', borderRadius: 'var(--radius-sm)' }}
+                        className={`btn`}
+                        style={{
+                            border: 'none',
+                            borderRadius: 'var(--radius-sm)',
+                            backgroundColor: role === 'warden' ? 'var(--card-bg)' : 'transparent',
+                            color: role === 'warden' ? 'var(--primary)' : 'var(--text-secondary)',
+                            fontWeight: role === 'warden' ? '600' : '500',
+                            boxShadow: role === 'warden' ? 'var(--shadow-sm)' : 'none'
+                        }}
                         onClick={() => setRole('warden')}
                     >
                         Warden
@@ -61,15 +82,18 @@ const Login = ({ onLogin }) => {
                     ) : (
                         <>
                             <div className="mb-2">
-                                <label htmlFor="username">Username</label>
-                                <input
-                                    id="username"
-                                    type="text"
-                                    placeholder="Enter Username"
+                                <label htmlFor="wardenSelect">Select Warden</label>
+                                <select
+                                    id="wardenSelect"
                                     value={identifier}
                                     onChange={(e) => setIdentifier(e.target.value)}
                                     required
-                                />
+                                >
+                                    <option value="">Select Warden...</option>
+                                    <option value="Pavithrakannan">Pavithrakannan</option>
+                                    <option value="Somu">Somu</option>
+                                    <option value="Raguram">Raguram</option>
+                                </select>
                             </div>
                             <div className="mb-2">
                                 <label htmlFor="password">Password</label>

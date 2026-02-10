@@ -6,6 +6,7 @@ const StudentDashboard = ({ user, onLogout }) => {
     const [requests, setRequests] = useState([]);
     const [showForm, setShowForm] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [viewImage, setViewImage] = useState(null); // For image modal
 
     // Load data
     const loadData = async () => {
@@ -53,7 +54,7 @@ const StudentDashboard = ({ user, onLogout }) => {
                 />
             ) : (
                 <>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <div className="section-header">
                         <h2 style={{ fontSize: '1.5rem', margin: 0 }}>My Leave History</h2>
                         <button className="btn btn-primary" onClick={() => setShowForm(true)}>+ New Request</button>
                     </div>
@@ -95,7 +96,7 @@ const StudentDashboard = ({ user, onLogout }) => {
                                                 </div>
                                             </div>
                                             <div className={`status-badge ${status === 'Approved' ? 'status-approved' :
-                                                    status === 'Rejected' ? 'status-rejected' : 'status-pending'
+                                                status === 'Rejected' ? 'status-rejected' : 'status-pending'
                                                 }`}>
                                                 {status}
                                             </div>
@@ -104,7 +105,7 @@ const StudentDashboard = ({ user, onLogout }) => {
                                         {/* Display Signed Letter Logic */}
                                         {(() => {
                                             const fileUrl = req['letter imqge'] || req['letter image'] || req['Letter Image URL'] || req['fileUrl'];
-                                            if (fileUrl && fileUrl.startsWith('http')) {
+                                            if (fileUrl && (fileUrl.startsWith('data:image') || fileUrl.startsWith('http'))) {
                                                 let previewUrl = fileUrl;
                                                 // Attempt to convert Google Drive view links to direct image links
                                                 if (fileUrl.includes('drive.google.com')) {
@@ -126,32 +127,32 @@ const StudentDashboard = ({ user, onLogout }) => {
                                                             borderRadius: 'var(--radius-md)',
                                                             overflow: 'hidden',
                                                             border: '1px solid var(--card-border)',
-                                                            background: 'rgba(0, 0, 0, 0.2)',
+                                                            background: 'var(--bg-color)',
                                                             maxWidth: '200px'
                                                         }}>
                                                             <img
                                                                 src={previewUrl}
                                                                 alt="Permission Letter"
                                                                 style={{ width: '100%', maxHeight: '150px', objectFit: 'cover', display: 'block', cursor: 'pointer' }}
-                                                                onClick={() => window.open(fileUrl, '_blank')}
+                                                                onClick={() => setViewImage(fileUrl)}
                                                                 onError={(e) => { e.target.style.display = 'none'; }}
                                                             />
                                                         </div>
-                                                        <a
-                                                            href={fileUrl}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-sm"
+                                                        <button
+                                                            onClick={() => setViewImage(fileUrl)}
+                                                            className="btn btn-secondary"
                                                             style={{
                                                                 display: 'inline-flex',
                                                                 alignItems: 'center',
                                                                 gap: '0.5rem',
-                                                                color: 'var(--primary)',
-                                                                textDecoration: 'none',
+                                                                padding: '0.5rem 1rem',
+                                                                fontSize: '0.875rem',
+                                                                border: 'none',
+                                                                cursor: 'pointer'
                                                             }}
                                                         >
                                                             <span>📄</span> View Full Letter
-                                                        </a>
+                                                        </button>
                                                     </div>
                                                 );
                                             }
@@ -162,7 +163,7 @@ const StudentDashboard = ({ user, onLogout }) => {
                                             <div style={{
                                                 marginTop: '0.5rem',
                                                 padding: '1rem',
-                                                background: 'rgba(0,0,0,0.2)',
+                                                background: 'var(--bg-color)',
                                                 borderRadius: 'var(--radius-md)',
                                                 borderLeft: '3px solid var(--primary)',
                                                 fontSize: '0.9rem'
@@ -181,6 +182,60 @@ const StudentDashboard = ({ user, onLogout }) => {
                         </div>
                     )}
                 </>
+            )}
+
+            {/* Image Modal */}
+            {viewImage && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0,0,0,0.9)',
+                        backdropFilter: 'blur(10px)',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        zIndex: 200,
+                        padding: '2rem'
+                    }}
+                    onClick={() => setViewImage(null)}
+                >
+                    <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%' }}>
+                        <button
+                            onClick={() => setViewImage(null)}
+                            style={{
+                                position: 'absolute',
+                                top: '-40px',
+                                right: '0',
+                                background: 'var(--danger)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: 'var(--radius-md)',
+                                padding: '0.5rem 1rem',
+                                cursor: 'pointer',
+                                fontSize: '1rem',
+                                fontWeight: 'bold'
+                            }}
+                        >
+                            ✕ Close
+                        </button>
+                        <img
+                            src={viewImage}
+                            alt="Permission Letter Full View"
+                            style={{
+                                maxWidth: '100%',
+                                maxHeight: '85vh',
+                                objectFit: 'contain',
+                                borderRadius: 'var(--radius-md)',
+                                boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
+                </div>
             )}
         </div>
     );

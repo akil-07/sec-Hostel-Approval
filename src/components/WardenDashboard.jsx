@@ -7,11 +7,18 @@ const WardenDashboard = ({ user, onLogout }) => {
     const [filter, setFilter] = useState('Pending'); // 'Pending', 'All'
     const [actionItem, setActionItem] = useState(null); // The request being acted upon
     const [remarks, setRemarks] = useState('');
+    const [viewImage, setViewImage] = useState(null); // For image modal
 
     const loadData = async () => {
         setLoading(true);
         const data = await fetchRequests();
-        setRequests(data.reverse());
+        const myWardenRequests = data.filter(r => {
+            // If the request has a warden field, match it. 
+            // If it doesn't (older data), maybe show it to everyone or filter it out.
+            // For now, let's show only matching warden requests
+            return r['warden'] === user.identifier || r['Warden'] === user.identifier;
+        });
+        setRequests(myWardenRequests.reverse());
         setLoading(false);
     };
 
@@ -54,20 +61,20 @@ const WardenDashboard = ({ user, onLogout }) => {
                 </div>
             </header>
 
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '1px' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '1rem' }}>
                 <button
                     className={`btn ${filter === 'Pending' ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => setFilter('Pending')}
-                    style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0, borderBottom: filter === 'Pending' ? 'none' : '1px solid transparent' }}
+                    style={{ flex: 1, justifyContent: 'center' }}
                 >
-                    Pending Requests
+                    Pending
                 </button>
                 <button
                     className={`btn ${filter === 'All' ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => setFilter('All')}
-                    style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0, borderBottom: filter === 'All' ? 'none' : '1px solid transparent' }}
+                    style={{ flex: 1, justifyContent: 'center' }}
                 >
-                    All History
+                    History
                 </button>
             </div>
 
@@ -108,7 +115,7 @@ const WardenDashboard = ({ user, onLogout }) => {
                                         </div>
                                     </div>
                                     <div className={`status-badge ${status === 'Approved' ? 'status-approved' :
-                                            status === 'Rejected' ? 'status-rejected' : 'status-pending'
+                                        status === 'Rejected' ? 'status-rejected' : 'status-pending'
                                         }`}>
                                         {status}
                                     </div>
@@ -124,7 +131,7 @@ const WardenDashboard = ({ user, onLogout }) => {
                                 {/* Display Signed Letter Logic */}
                                 {(() => {
                                     const fileUrl = req['letter imqge'] || req['letter image'] || req['Letter Image URL'] || req['fileUrl'];
-                                    if (fileUrl && fileUrl.startsWith('http')) {
+                                    if (fileUrl && (fileUrl.startsWith('data:image') || fileUrl.startsWith('http'))) {
                                         let previewUrl = fileUrl;
                                         // Attempt to convert Google Drive view links to direct image links
                                         if (fileUrl.includes('drive.google.com')) {
@@ -146,26 +153,24 @@ const WardenDashboard = ({ user, onLogout }) => {
                                                     borderRadius: 'var(--radius-md)',
                                                     overflow: 'hidden',
                                                     border: '1px solid var(--card-border)',
-                                                    background: 'rgba(0, 0, 0, 0.2)',
+                                                    background: 'var(--bg-color)',
                                                     maxWidth: '250px'
                                                 }}>
                                                     <img
                                                         src={previewUrl}
                                                         alt="Permission Letter"
                                                         style={{ width: '100%', maxHeight: '200px', objectFit: 'contain', display: 'block', cursor: 'pointer' }}
-                                                        onClick={() => window.open(fileUrl, '_blank')}
+                                                        onClick={() => setViewImage(fileUrl)}
                                                         onError={(e) => { e.target.style.display = 'none'; }}
                                                     />
                                                 </div>
-                                                <a
-                                                    href={fileUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
+                                                <button
+                                                    onClick={() => setViewImage(fileUrl)}
                                                     className="btn btn-secondary"
                                                     style={{ display: 'inline-flex', padding: '0.5rem 1rem', fontSize: '0.875rem' }}
                                                 >
                                                     <span>📄</span> View Full Letter
-                                                </a>
+                                                </button>
                                             </div>
                                         );
                                     }
@@ -209,6 +214,60 @@ const WardenDashboard = ({ user, onLogout }) => {
                             <button className="btn btn-primary" onClick={confirmAction} style={{ flex: 1 }}>Confirm</button>
                             <button className="btn btn-secondary" onClick={() => setActionItem(null)} style={{ flex: 1 }}>Cancel</button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Image Modal */}
+            {viewImage && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0,0,0,0.9)',
+                        backdropFilter: 'blur(10px)',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        zIndex: 200,
+                        padding: '2rem'
+                    }}
+                    onClick={() => setViewImage(null)}
+                >
+                    <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%' }}>
+                        <button
+                            onClick={() => setViewImage(null)}
+                            style={{
+                                position: 'absolute',
+                                top: '-40px',
+                                right: '0',
+                                background: 'var(--danger)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: 'var(--radius-md)',
+                                padding: '0.5rem 1rem',
+                                cursor: 'pointer',
+                                fontSize: '1rem',
+                                fontWeight: 'bold'
+                            }}
+                        >
+                            ✕ Close
+                        </button>
+                        <img
+                            src={viewImage}
+                            alt="Permission Letter Full View"
+                            style={{
+                                maxWidth: '100%',
+                                maxHeight: '85vh',
+                                objectFit: 'contain',
+                                borderRadius: 'var(--radius-md)',
+                                boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        />
                     </div>
                 </div>
             )}

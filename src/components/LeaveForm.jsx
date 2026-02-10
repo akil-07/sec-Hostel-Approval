@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getStudentInfo } from '../data/students';
 
 const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
+    const [uploading, setUploading] = useState(false);
     const [formData, setFormData] = useState({
         regNo: regNo,
         name: '',
@@ -19,8 +21,28 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
         letterSigned: 'No',
         fileData: '',
         fileName: '',
-        mimeType: ''
+        mimeType: '',
+        warden: ''
     });
+
+    // Auto-fill name and room when regNo is available
+    useEffect(() => {
+        console.log('🔍 Auto-fill check - RegNo:', regNo);
+        if (regNo) {
+            const studentInfo = getStudentInfo(regNo);
+            console.log('📊 Student info found:', studentInfo);
+            if (studentInfo) {
+                console.log('✅ Auto-filling:', { name: studentInfo.name, room: studentInfo.room });
+                setFormData(prev => ({
+                    ...prev,
+                    name: studentInfo.name || prev.name,
+                    room: studentInfo.room || prev.room
+                }));
+            } else {
+                console.log('❌ No student data found for RegNo:', regNo);
+            }
+        }
+    }, [regNo]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -29,11 +51,13 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            // Store raw file for Firebase Storage
             const reader = new FileReader();
             reader.onloadend = () => {
                 setFormData({
                     ...formData,
-                    fileData: reader.result,
+                    fileData: reader.result, // Keep base64 for preview or GAS backup if needed
+                    rawFile: file,           // Add raw file for Firebase Storage
                     fileName: file.name,
                     mimeType: file.type
                 });
@@ -42,9 +66,16 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        onSubmit(formData);
+        setUploading(true);
+        try {
+            await onSubmit(formData);
+        } catch (error) {
+            console.error("Error submitting form:", error);
+        } finally {
+            setUploading(false);
+        }
     };
 
     return (
@@ -58,7 +89,7 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
                     </div>
                     <div>
                         <label>Student Name</label>
-                        <input name="name" placeholder="Full Name" onChange={handleChange} required />
+                        <input name="name" value={formData.name} placeholder="Full Name" onChange={handleChange} required />
                     </div>
                     <div>
                         <label>Year of Study</label>
@@ -84,7 +115,7 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
                     </div>
                     <div>
                         <label>Room Number</label>
-                        <input name="room" placeholder="Room No" onChange={handleChange} required />
+                        <input name="room" value={formData.room} placeholder="Room No" onChange={handleChange} required />
                     </div>
                     <div>
                         <label>Floor In-Charge</label>
@@ -118,6 +149,15 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
 
                 <div className="grid-2 mt-4">
                     <div>
+                        <label>Select Your Warden</label>
+                        <select name="warden" value={formData.warden} onChange={handleChange} required>
+                            <option value="">Choose Warden...</option>
+                            <option value="Pavithrakannan">Pavithrakannan</option>
+                            <option value="Somu">Somu</option>
+                            <option value="Raguram">Raguram</option>
+                        </select>
+                    </div>
+                    <div>
                         <label>Letter Signed by HoD?</label>
                         <select name="letterSigned" onChange={handleChange} required>
                             <option value="No">No</option>
@@ -140,8 +180,10 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
                 </div>
 
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid var(--card-border)' }}>
-                    <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Submit Application</button>
-                    <button type="button" className="btn btn-secondary" onClick={onCancel}>Cancel</button>
+                    <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={uploading}>
+                        {uploading ? '📤 Uploading...' : 'Submit Application'}
+                    </button>
+                    <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={uploading} style={{ flex: 1 }}>Cancel</button>
                 </div>
             </form>
         </div>
