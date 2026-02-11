@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { addStudent, addWarden, fetchWardens } from '../api';
+import { addStudent, addWarden, fetchWardens, deleteAllLeaveRequests } from '../api';
 
 const SuperAdminDashboard = ({ onLogout }) => {
-    const [activeTab, setActiveTab] = useState('students'); // 'students' or 'wardens'
+    const [activeTab, setActiveTab] = useState('students'); // 'students', 'wardens', 'clean'
     const [studentForm, setStudentForm] = useState({
         regNo: '',
         name: '',
@@ -16,6 +16,7 @@ const SuperAdminDashboard = ({ onLogout }) => {
     });
     const [statusMsg, setStatusMsg] = useState('');
     const [existingWardens, setExistingWardens] = useState([]);
+    const [cleaning, setCleaning] = useState(false);
 
     // Load wardens on component mount
     useEffect(() => {
@@ -50,6 +51,28 @@ const SuperAdminDashboard = ({ onLogout }) => {
         }
     };
 
+    const handleCleanup = async () => {
+        if (!window.confirm("⚠️ WARNING: This will PERMANENTLY DELETE ALL leave requests and their attached photos from the database.\n\nThis action CANNOT be undone.\n\nAre you sure you want to clear all storage to free up space?")) {
+            return;
+        }
+
+        setCleaning(true);
+        setStatusMsg("⏳ Deleting requests... Please wait...");
+
+        try {
+            const result = await deleteAllLeaveRequests();
+            if (result.count === 0) {
+                setStatusMsg("ℹ️ Database is already empty.");
+            } else {
+                setStatusMsg(`✅ Successfully deleted ${result.count} requests and reclaimed storage space.`);
+            }
+        } catch (error) {
+            setStatusMsg(`❌ Error cleaning database: ${error.message}`);
+        } finally {
+            setCleaning(false);
+        }
+    };
+
     return (
         <div className="container">
             <header className="page-header">
@@ -65,9 +88,9 @@ const SuperAdminDashboard = ({ onLogout }) => {
                     padding: '1rem',
                     marginBottom: '1rem',
                     borderRadius: 'var(--radius-md)',
-                    background: statusMsg.includes('✅') ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                    color: statusMsg.includes('✅') ? '#047857' : '#b91c1c',
-                    border: `1px solid ${statusMsg.includes('✅') ? '#059669' : '#dc2626'}`
+                    background: statusMsg.includes('✅') ? 'rgba(16, 185, 129, 0.1)' : statusMsg.includes('ℹ️') ? 'rgba(59, 130, 246, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                    color: statusMsg.includes('✅') ? '#047857' : statusMsg.includes('ℹ️') ? '#1d4ed8' : '#b91c1c',
+                    border: `1px solid ${statusMsg.includes('✅') ? '#059669' : statusMsg.includes('ℹ️') ? '#2563eb' : '#dc2626'}`
                 }}>
                     {statusMsg}
                 </div>
@@ -87,6 +110,18 @@ const SuperAdminDashboard = ({ onLogout }) => {
                     style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}
                 >
                     Manage Wardens
+                </button>
+                <button
+                    className={`btn ${activeTab === 'clean' ? 'btn-danger' : 'btn-secondary'}`}
+                    onClick={() => { setActiveTab('clean'); setStatusMsg(''); }}
+                    style={{
+                        borderBottomLeftRadius: 0,
+                        borderBottomRightRadius: 0,
+                        backgroundColor: activeTab === 'clean' ? '#dc2626' : undefined,
+                        color: activeTab === 'clean' ? 'white' : undefined
+                    }}
+                >
+                    Request Cleanup
                 </button>
             </div>
 
@@ -152,7 +187,7 @@ const SuperAdminDashboard = ({ onLogout }) => {
                         </button>
                     </form>
                 </div>
-            ) : (
+            ) : activeTab === 'wardens' ? (
                 <div className="card">
                     <h3 style={{ marginTop: 0 }}>Add New Warden</h3>
                     <form onSubmit={handleWardenSubmit} style={{ marginBottom: '2rem' }}>
@@ -195,9 +230,31 @@ const SuperAdminDashboard = ({ onLogout }) => {
                         <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>No dynamic wardens added yet. (System uses hardcoded defaults for now)</p>
                     )}
                 </div>
+            ) : (
+                <div className="card" style={{ border: '1px solid #fecaca', background: '#fff1f2' }}>
+                    <h3 style={{ marginTop: 0, color: '#b91c1c' }}>⚠️ Danger Zone: Database Cleanup</h3>
+                    <p style={{ color: '#7f1d1d', marginBottom: '1.5rem' }}>
+                        This action allows you to manage the database storage by deleting old leave requests.
+                        Since photos are stored directly in the database, deleting requests will <strong>immediately free up storage space</strong>.
+                    </p>
+
+                    <div style={{ background: 'white', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid #fca5a5' }}>
+                        <h4 style={{ marginTop: 0 }}>Clear All Leave Requests</h4>
+                        <p>This will delete <strong>ALL</strong> past and pending leave requests and their attached images.</p>
+                        <p><strong>Note:</strong> Student and Warden accounts will NOT be deleted.</p>
+
+                        <button
+                            className="btn btn-danger"
+                            style={{ backgroundColor: '#dc2626', color: 'white', marginTop: '1rem' }}
+                            onClick={handleCleanup}
+                            disabled={cleaning}
+                        >
+                            {cleaning ? '🗑️ Deleting...' : '🗑️ Delete All Requests & Photos'}
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );
 };
-
 export default SuperAdminDashboard;

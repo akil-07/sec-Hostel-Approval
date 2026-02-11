@@ -1,6 +1,34 @@
 import { GOOGLE_SCRIPT_URL } from './config';
 import { db } from './firebase';
-import { collection, addDoc, getDocs, updateDoc, doc, query, orderBy, setDoc, getDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs, updateDoc, doc, query, orderBy, setDoc, getDoc, deleteDoc, writeBatch } from "firebase/firestore";
+
+// ... existing code ...
+
+// Delete all leave requests (for storage cleanup)
+export const deleteAllLeaveRequests = async () => {
+    try {
+        const q = query(collection(db, "leave_requests"));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.size === 0) return { status: 'success', count: 0 };
+
+        // Firestore batch limit is 500
+        const batch = writeBatch(db);
+        let count = 0;
+
+        snapshot.forEach((doc) => {
+            batch.delete(doc.ref);
+            count++;
+        });
+
+        await batch.commit();
+        console.log(`✅ Deleted ${count} leave requests.`);
+        return { status: 'success', count };
+    } catch (error) {
+        console.error("❌ Error deleting requests:", error);
+        throw error;
+    }
+};
 
 // Helper to compress and convert image to Base64
 const compressImage = (file) => {
