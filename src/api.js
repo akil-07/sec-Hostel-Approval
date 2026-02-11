@@ -222,7 +222,7 @@ export const addStudent = async (studentData) => {
     try {
         // Use RegNo as ID for easy lookup, or auto-ID
         // Using RegNo as ID is better for deduplication
-        await setDoc(doc(db, "students", studentData.regNo), studentData);
+        await setDoc(doc(db, "students", studentData.regNo), studentData, { merge: true });
         console.log("✅ Student added/updated:", studentData.name);
         return { status: 'success' };
     } catch (error) {

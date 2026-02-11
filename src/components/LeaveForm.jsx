@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { getStudentInfo } from '../data/students';
-import { fetchWardens } from '../api';
+import { fetchWardens, fetchStudent, addStudent } from '../api';
 
 const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
+    // ... existing state ...
     const [uploading, setUploading] = useState(false);
     const [formData, setFormData] = useState({
         regNo: regNo,
@@ -39,23 +40,42 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
         loadWardens();
     }, []);
 
-    // Auto-fill name and room when regNo is available
+    // Auto-fill student data (Firestore -> Static fallback)
     useEffect(() => {
-        console.log('🔍 Auto-fill check - RegNo:', regNo);
-        if (regNo) {
-            const studentInfo = getStudentInfo(regNo);
-            console.log('📊 Student info found:', studentInfo);
-            if (studentInfo) {
-                console.log('✅ Auto-filling:', { name: studentInfo.name, room: studentInfo.room });
+        const loadStudentData = async () => {
+            if (!regNo) return;
+
+            console.log('🔍 Checking for saved student profile:', regNo);
+
+            // 1. Try Firestore First (Saved Profile)
+            const savedProfile = await fetchStudent(regNo);
+
+            if (savedProfile) {
+                console.log('✅ Found saved profile:', savedProfile);
                 setFormData(prev => ({
                     ...prev,
-                    name: studentInfo.name || prev.name,
-                    room: studentInfo.room || prev.room
+                    name: savedProfile.name || prev.name,
+                    room: savedProfile.room || prev.room,
+                    year: savedProfile.year || prev.year,
+                    dept: savedProfile.dept || prev.dept,
+                    studentMobile: savedProfile.studentMobile || prev.studentMobile,
+                    parentMobile: savedProfile.parentMobile || prev.parentMobile,
+                    warden: savedProfile.warden || prev.warden
                 }));
             } else {
-                console.log('❌ No student data found for RegNo:', regNo);
+                // 2. Fallback to Static Data (First time user)
+                const staticInfo = getStudentInfo(regNo);
+                if (staticInfo) {
+                    console.log('ℹ️ Using static fallback data:', staticInfo);
+                    setFormData(prev => ({
+                        ...prev,
+                        name: staticInfo.name || prev.name,
+                        room: staticInfo.room || prev.room
+                    }));
+                }
             }
-        }
+        };
+        loadStudentData();
     }, [regNo]);
 
     const handleChange = (e) => {
@@ -83,6 +103,26 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setUploading(true);
+
+        // Save Profile for next time (Add "Default" behavior)
+        const profileData = {
+            regNo: formData.regNo,
+            name: formData.name,
+            year: formData.year,
+            dept: formData.dept,
+            studentMobile: formData.studentMobile,
+            parentMobile: formData.parentMobile,
+            room: formData.room,
+            warden: formData.warden // Save preferred warden too!
+        };
+
+        try {
+            await addStudent(profileData); // Save/Update to 'students' collection
+            console.log("✅ Student profile updated/saved as default.");
+        } catch (err) {
+            console.warn("⚠️ Failed to save student profile (non-critical):", err);
+        }
+
         try {
             await onSubmit(formData);
         } catch (error) {
