@@ -13,7 +13,6 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
         parentMobile: '',
         room: '',
         reason: '',
-        floorInCharge: '',
         leaveDates: '',
         numDays: '',
         leavingDate: '',
@@ -131,10 +130,6 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
                     <div>
                         <label>Room Number</label>
                         <input name="room" value={formData.room} placeholder="Room No" onChange={handleChange} required />
-                    </div>
-                    <div>
-                        <label>Floor In-Charge</label>
-                        <input name="floorInCharge" placeholder="Name" onChange={handleChange} required />
                     </div>
                 </div>
 

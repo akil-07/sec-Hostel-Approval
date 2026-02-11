@@ -142,7 +142,6 @@ export const submitRequest = async (formData) => {
             'Remarks': '',
 
             // Include other form fields
-            floorInCharge: formData.floorInCharge,
             outTime: formData.outTime,
             numDays: formData.numDays,
             letterSigned: formData.letterSigned,
