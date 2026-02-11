@@ -222,7 +222,8 @@ export const addStudent = async (studentData) => {
     try {
         // Use RegNo as ID for easy lookup, or auto-ID
         // Using RegNo as ID is better for deduplication
-        await setDoc(doc(db, "students", studentData.regNo), studentData, { merge: true });
+        const normalizedRegNo = studentData.regNo.toString().trim().toUpperCase();
+        await setDoc(doc(db, "students", normalizedRegNo), studentData, { merge: true });
         console.log("✅ Student added/updated:", studentData.name);
         return { status: 'success' };
     } catch (error) {
@@ -234,7 +235,8 @@ export const addStudent = async (studentData) => {
 // Fetch student details (Check Firestore first, could fallback to static file if needed logic exists)
 export const fetchStudent = async (regNo) => {
     try {
-        const docRef = doc(db, "students", regNo);
+        const normalizedRegNo = regNo.toString().trim().toUpperCase();
+        const docRef = doc(db, "students", normalizedRegNo);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
             return docSnap.data();
