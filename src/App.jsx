@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Login from './components/Login';
 import StudentDashboard from './components/StudentDashboard';
 import WardenDashboard from './components/WardenDashboard';
+import SuperAdminDashboard from './components/SuperAdminDashboard';
 import './App.css'; // Component specific overrides if any
 
 function App() {
@@ -59,6 +60,7 @@ function App() {
       {view === 'login' && <Login onLogin={handleLogin} />}
       {view === 'student' && <StudentDashboard user={user} onLogout={handleLogout} />}
       {view === 'warden' && <WardenDashboard user={user} onLogout={handleLogout} />}
+      {view === 'superadmin' && <SuperAdminDashboard onLogout={handleLogout} />}
     </div>
   );
 }

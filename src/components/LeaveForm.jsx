@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getStudentInfo } from '../data/students';
+import { fetchWardens } from '../api';
 
 const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
     const [uploading, setUploading] = useState(false);
@@ -24,6 +25,20 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
         mimeType: '',
         warden: ''
     });
+    const [availableWardens, setAvailableWardens] = useState([]);
+
+    // Load wardens
+    useEffect(() => {
+        const loadWardens = async () => {
+            try {
+                const wardens = await fetchWardens();
+                setAvailableWardens(wardens);
+            } catch (err) {
+                console.error("Failed to load wardens", err);
+            }
+        };
+        loadWardens();
+    }, []);
 
     // Auto-fill name and room when regNo is available
     useEffect(() => {
@@ -152,9 +167,17 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
                         <label>Select Your Warden</label>
                         <select name="warden" value={formData.warden} onChange={handleChange} required>
                             <option value="">Choose Warden...</option>
-                            <option value="Pavithrakannan">Pavithrakannan</option>
-                            <option value="Somu">Somu</option>
-                            <option value="Raguram">Raguram</option>
+                            {availableWardens.length > 0 ? (
+                                availableWardens.map((w) => (
+                                    <option key={w.id} value={w.name}>{w.name}</option>
+                                ))
+                            ) : (
+                                <>
+                                    <option value="Pavithrakannan">Pavithrakannan</option>
+                                    <option value="Somu">Somu</option>
+                                    <option value="Raguram">Raguram</option>
+                                </>
+                            )}
                         </select>
                     </div>
                     <div>

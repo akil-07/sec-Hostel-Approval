@@ -1,0 +1,203 @@
+import React, { useState, useEffect } from 'react';
+import { addStudent, addWarden, fetchWardens } from '../api';
+
+const SuperAdminDashboard = ({ onLogout }) => {
+    const [activeTab, setActiveTab] = useState('students'); // 'students' or 'wardens'
+    const [studentForm, setStudentForm] = useState({
+        regNo: '',
+        name: '',
+        room: '',
+        year: '',
+        dept: ''
+    });
+    const [wardenForm, setWardenForm] = useState({
+        name: '',
+        password: ''
+    });
+    const [statusMsg, setStatusMsg] = useState('');
+    const [existingWardens, setExistingWardens] = useState([]);
+
+    // Load wardens on component mount
+    useEffect(() => {
+        loadWardens();
+    }, []);
+
+    const loadWardens = async () => {
+        const wardens = await fetchWardens();
+        setExistingWardens(wardens);
+    };
+
+    const handleStudentSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await addStudent(studentForm);
+            setStatusMsg(`✅ Student ${studentForm.name} added successfully!`);
+            setStudentForm({ regNo: '', name: '', room: '', year: '', dept: '' }); // Reset
+        } catch (error) {
+            setStatusMsg(`❌ Error adding student: ${error.message}`);
+        }
+    };
+
+    const handleWardenSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await addWarden(wardenForm);
+            setStatusMsg(`✅ Warden ${wardenForm.name} added successfully!`);
+            setWardenForm({ name: '', password: '' });
+            loadWardens(); // Refresh list
+        } catch (error) {
+            setStatusMsg(`❌ Error adding warden: ${error.message}`);
+        }
+    };
+
+    return (
+        <div className="container">
+            <header className="page-header">
+                <div>
+                    <h1 className="page-title">Super Admin Portal</h1>
+                    <p className="page-subtitle">Manage system users and configurations</p>
+                </div>
+                <button className="btn btn-secondary" onClick={onLogout}>Logout</button>
+            </header>
+
+            {statusMsg && (
+                <div style={{
+                    padding: '1rem',
+                    marginBottom: '1rem',
+                    borderRadius: 'var(--radius-md)',
+                    background: statusMsg.includes('✅') ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                    color: statusMsg.includes('✅') ? '#047857' : '#b91c1c',
+                    border: `1px solid ${statusMsg.includes('✅') ? '#059669' : '#dc2626'}`
+                }}>
+                    {statusMsg}
+                </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--card-border)' }}>
+                <button
+                    className={`btn ${activeTab === 'students' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => { setActiveTab('students'); setStatusMsg(''); }}
+                    style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}
+                >
+                    Add Students
+                </button>
+                <button
+                    className={`btn ${activeTab === 'wardens' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => { setActiveTab('wardens'); setStatusMsg(''); }}
+                    style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}
+                >
+                    Manage Wardens
+                </button>
+            </div>
+
+            {activeTab === 'students' ? (
+                <div className="card">
+                    <h3 style={{ marginTop: 0 }}>Add New Student</h3>
+                    <form onSubmit={handleStudentSubmit}>
+                        <div className="grid-2">
+                            <div className="mb-2">
+                                <label>Register Number</label>
+                                <input
+                                    value={studentForm.regNo}
+                                    onChange={(e) => setStudentForm({ ...studentForm, regNo: e.target.value.toUpperCase() })}
+                                    placeholder="e.g. 913121104001"
+                                    required
+                                />
+                            </div>
+                            <div className="mb-2">
+                                <label>Student Name</label>
+                                <input
+                                    value={studentForm.name}
+                                    onChange={(e) => setStudentForm({ ...studentForm, name: e.target.value })}
+                                    placeholder="Full Name"
+                                    required
+                                />
+                            </div>
+                            <div className="mb-2">
+                                <label>Room Number</label>
+                                <input
+                                    value={studentForm.room}
+                                    onChange={(e) => setStudentForm({ ...studentForm, room: e.target.value })}
+                                    placeholder="e.g. NBF-101"
+                                    required
+
+                                />
+                            </div>
+                            <div className="mb-2">
+                                <label>Year</label>
+                                <select
+                                    value={studentForm.year}
+                                    onChange={(e) => setStudentForm({ ...studentForm, year: e.target.value })}
+                                    required
+                                >
+                                    <option value="">Select Year</option>
+                                    <option value="1">1st Year</option>
+                                    <option value="2">2nd Year</option>
+                                    <option value="3">3rd Year</option>
+                                    <option value="4">4th Year</option>
+                                </select>
+                            </div>
+                            <div className="mb-2">
+                                <label>Department</label>
+                                <input
+                                    value={studentForm.dept}
+                                    onChange={(e) => setStudentForm({ ...studentForm, dept: e.target.value })}
+                                    placeholder="e.g. CSE"
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem' }}>
+                            Add Student
+                        </button>
+                    </form>
+                </div>
+            ) : (
+                <div className="card">
+                    <h3 style={{ marginTop: 0 }}>Add New Warden</h3>
+                    <form onSubmit={handleWardenSubmit} style={{ marginBottom: '2rem' }}>
+                        <div className="grid-2">
+                            <div className="mb-2">
+                                <label>Warden Name</label>
+                                <input
+                                    value={wardenForm.name}
+                                    onChange={(e) => setWardenForm({ ...wardenForm, name: e.target.value })}
+                                    placeholder="e.g. New Warden"
+                                    required
+                                />
+                            </div>
+                            <div className="mb-2">
+                                <label>Password</label>
+                                <input
+                                    value={wardenForm.password}
+                                    onChange={(e) => setWardenForm({ ...wardenForm, password: e.target.value })}
+                                    placeholder="Set Password"
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem' }}>
+                            Add Warden
+                        </button>
+                    </form>
+
+                    <h4 style={{ borderTop: '1px solid var(--card-border)', paddingTop: '1rem' }}>Existing Wardens (Firestore)</h4>
+                    {existingWardens.length > 0 ? (
+                        <ul style={{ listStyle: 'none', padding: 0 }}>
+                            {existingWardens.map((w, idx) => (
+                                <li key={idx} style={{ padding: '0.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>👤 <strong>{w.name}</strong></span>
+                                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Password: {w.password}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>No dynamic wardens added yet. (System uses hardcoded defaults for now)</p>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default SuperAdminDashboard;

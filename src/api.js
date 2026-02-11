@@ -1,6 +1,6 @@
 import { GOOGLE_SCRIPT_URL } from './config';
 import { db } from './firebase';
-import { collection, addDoc, getDocs, updateDoc, doc, query, orderBy } from "firebase/firestore";
+import { collection, addDoc, getDocs, updateDoc, doc, query, orderBy, setDoc, getDoc } from "firebase/firestore";
 
 // Helper to compress and convert image to Base64
 const compressImage = (file) => {
@@ -61,6 +61,9 @@ export const fetchRequests = async () => {
         return requests;
     } catch (error) {
         console.error("Error fetching data from Firebase:", error);
+        if (error.code === 'permission-denied') {
+            return [];
+        }
         return [];
     }
 };
@@ -182,5 +185,64 @@ export const updateRequest = async (id, status, remarks) => {
     } catch (error) {
         console.error("❌ Error updating request:", error);
         return { status: 'error', message: error.message };
+    }
+};
+
+// --- Super Admin Functions ---
+
+// Add a new student to Firestore
+export const addStudent = async (studentData) => {
+    try {
+        // Use RegNo as ID for easy lookup, or auto-ID
+        // Using RegNo as ID is better for deduplication
+        await setDoc(doc(db, "students", studentData.regNo), studentData);
+        console.log("✅ Student added/updated:", studentData.name);
+        return { status: 'success' };
+    } catch (error) {
+        console.error("❌ Error adding student:", error);
+        throw error;
+    }
+};
+
+// Fetch student details (Check Firestore first, could fallback to static file if needed logic exists)
+export const fetchStudent = async (regNo) => {
+    try {
+        const docRef = doc(db, "students", regNo);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            return docSnap.data();
+        }
+        return null;
+    } catch (error) {
+        console.error("Error fetching student:", error);
+        return null;
+    }
+};
+
+// Add a new warden
+export const addWarden = async (wardenData) => {
+    try {
+        // wardenData = { name: "Somu", password: "123" }
+        await addDoc(collection(db, "wardens"), wardenData);
+        return { status: 'success' };
+    } catch (error) {
+        console.error("❌ Error adding warden:", error);
+        throw error;
+    }
+};
+
+// Fetch all wardens
+export const fetchWardens = async () => {
+    try {
+        const q = query(collection(db, "wardens"));
+        const querySnapshot = await getDocs(q);
+        const wardens = [];
+        querySnapshot.forEach((doc) => {
+            wardens.push({ id: doc.id, ...doc.data() });
+        });
+        return wardens;
+    } catch (error) {
+        console.error("Error fetching wardens:", error);
+        return [];
     }
 };
