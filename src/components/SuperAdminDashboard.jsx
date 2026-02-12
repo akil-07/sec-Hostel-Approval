@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { addStudent, addWarden, fetchWardens, deleteAllLeaveRequests } from '../api';
+import { addStudent, addWarden, fetchWardens, deleteAllLeaveRequests, fetchConfig, updateConfig } from '../api';
 
 const SuperAdminDashboard = ({ onLogout }) => {
-    const [activeTab, setActiveTab] = useState('students'); // 'students', 'wardens', 'clean'
+    const [activeTab, setActiveTab] = useState('students'); // 'students', 'wardens', 'settings', 'clean'
     const [studentForm, setStudentForm] = useState({
         regNo: '',
         name: '',
@@ -14,18 +14,22 @@ const SuperAdminDashboard = ({ onLogout }) => {
         name: '',
         password: ''
     });
+    const [config, setConfig] = useState({ is24HourRuleEnabled: false });
     const [statusMsg, setStatusMsg] = useState('');
     const [existingWardens, setExistingWardens] = useState([]);
     const [cleaning, setCleaning] = useState(false);
 
-    // Load wardens on component mount
+    // Load initial data
     useEffect(() => {
-        loadWardens();
+        loadData();
     }, []);
 
-    const loadWardens = async () => {
+    const loadData = async () => {
         const wardens = await fetchWardens();
         setExistingWardens(wardens);
+
+        const globalConfig = await fetchConfig();
+        setConfig(globalConfig);
     };
 
     const handleStudentSubmit = async (e) => {
@@ -45,9 +49,20 @@ const SuperAdminDashboard = ({ onLogout }) => {
             await addWarden(wardenForm);
             setStatusMsg(`✅ Warden ${wardenForm.name} added successfully!`);
             setWardenForm({ name: '', password: '' });
-            loadWardens(); // Refresh list
+            loadData(); // Refresh list
         } catch (error) {
             setStatusMsg(`❌ Error adding warden: ${error.message}`);
+        }
+    };
+
+    const handleConfigToggle = async () => {
+        const newConfig = { ...config, is24HourRuleEnabled: !config.is24HourRuleEnabled };
+        try {
+            await updateConfig(newConfig);
+            setConfig(newConfig);
+            setStatusMsg(`✅ 24-Hour Rule is now ${newConfig.is24HourRuleEnabled ? 'ENABLED' : 'DISABLED'}`);
+        } catch (error) {
+            setStatusMsg(`❌ Error updating config: ${error.message}`);
         }
     };
 
@@ -96,20 +111,27 @@ const SuperAdminDashboard = ({ onLogout }) => {
                 </div>
             )}
 
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--card-border)' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '1px solid var(--card-border)', flexWrap: 'wrap' }}>
                 <button
                     className={`btn ${activeTab === 'students' ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => { setActiveTab('students'); setStatusMsg(''); }}
-                    style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}
+                    style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0, flex: 1 }}
                 >
                     Add Students
                 </button>
                 <button
                     className={`btn ${activeTab === 'wardens' ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => { setActiveTab('wardens'); setStatusMsg(''); }}
-                    style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}
+                    style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0, flex: 1 }}
                 >
                     Manage Wardens
+                </button>
+                <button
+                    className={`btn ${activeTab === 'settings' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => { setActiveTab('settings'); setStatusMsg(''); }}
+                    style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0, flex: 1 }}
+                >
+                    Settings (Rules)
                 </button>
                 <button
                     className={`btn ${activeTab === 'clean' ? 'btn-danger' : 'btn-secondary'}`}
@@ -118,10 +140,11 @@ const SuperAdminDashboard = ({ onLogout }) => {
                         borderBottomLeftRadius: 0,
                         borderBottomRightRadius: 0,
                         backgroundColor: activeTab === 'clean' ? '#dc2626' : undefined,
-                        color: activeTab === 'clean' ? 'white' : undefined
+                        color: activeTab === 'clean' ? 'white' : undefined,
+                        flex: 1
                     }}
                 >
-                    Request Cleanup
+                    Cleanup
                 </button>
             </div>
 
@@ -230,8 +253,39 @@ const SuperAdminDashboard = ({ onLogout }) => {
                         <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>No dynamic wardens added yet. (System uses hardcoded defaults for now)</p>
                     )}
                 </div>
+            ) : activeTab === 'settings' ? (
+                <div className="card">
+                    <h3 style={{ marginTop: 0 }}>Rules & Configuration</h3>
+
+                    <div style={{
+                        padding: '1.5rem',
+                        border: '1px solid var(--card-border)',
+                        borderRadius: 'var(--radius-md)',
+                        background: 'var(--bg-color)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                    }}>
+                        <div>
+                            <h4 style={{ margin: '0 0 0.5rem 0' }}>24-Hour Advance Notice Rule</h4>
+                            <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                If enabled, students can only apply for leave if the leaving date is at least 24 hours from now.<br />
+                                <small>Emergency requests bypass this rule.</small>
+                            </p>
+                        </div>
+                        <div className="toggle-switch-container">
+                            <button
+                                className={`btn ${config.is24HourRuleEnabled ? 'btn-success' : 'btn-secondary'}`}
+                                onClick={handleConfigToggle}
+                            >
+                                {config.is24HourRuleEnabled ? 'ENABLED' : 'DISABLED'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             ) : (
                 <div className="card" style={{ border: '1px solid #fecaca', background: '#fff1f2' }}>
+                    {/* Cleanup Code (Same as before) */}
                     <h3 style={{ marginTop: 0, color: '#b91c1c' }}>⚠️ Danger Zone: Database Cleanup</h3>
                     <p style={{ color: '#7f1d1d', marginBottom: '1.5rem' }}>
                         This action allows you to manage the database storage by deleting old leave requests.

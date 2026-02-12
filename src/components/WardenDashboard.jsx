@@ -44,13 +44,17 @@ const WardenDashboard = ({ user, onLogout }) => {
 
     const filteredRequests = requests.filter(r => {
         const status = r['Approval'] || 'Pending';
+        const isEmergency = r['requestType'] === 'Emergency';
+
         if (filter === 'Pending') return status === 'Pending';
+        if (filter === 'Emergency') return isEmergency; // Show all emergency (pending or processed)
         return true;
     });
 
     // Helper component for individual request cards
     const RequestCard = ({ req, onAction, onViewImage }) => {
         const [isExpanded, setIsExpanded] = useState(false);
+        const isEmergency = req['requestType'] === 'Emergency';
 
         const formatDate = (dateString) => {
             if (!dateString) return '';
@@ -65,7 +69,12 @@ const WardenDashboard = ({ user, onLogout }) => {
         const status = req['Approval'] || 'Pending';
 
         return (
-            <div className="card" style={{ padding: '0', overflow: 'hidden', transition: 'all 0.2s ease' }}>
+            <div className="card" style={{
+                padding: '0',
+                overflow: 'hidden',
+                transition: 'all 0.2s ease',
+                border: isEmergency ? '2px solid #ef4444' : '1px solid var(--card-border)'
+            }}>
                 {/* Header - Single Line View */}
                 <div
                     onClick={() => setIsExpanded(!isExpanded)}
@@ -75,11 +84,12 @@ const WardenDashboard = ({ user, onLogout }) => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        background: isExpanded ? 'rgba(0,0,0,0.02)' : 'transparent',
+                        background: isExpanded ? 'rgba(0,0,0,0.02)' : (isEmergency ? '#fef2f2' : 'transparent'),
                         gap: '1rem'
                     }}
                 >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1, flexWrap: 'wrap' }}>
+                        {isEmergency && <span style={{ fontSize: '1.2rem', animation: 'pulse 1.5s infinite' }}>🚨</span>}
                         <div style={{ fontWeight: '600', fontSize: '1.05rem', minWidth: '180px', color: 'var(--text-primary)' }}>
                             {req['Student Name']}
                         </div>
@@ -121,6 +131,22 @@ const WardenDashboard = ({ user, onLogout }) => {
                         borderTop: '1px solid var(--card-border)',
                         animation: 'fadeIn 0.3s ease'
                     }}>
+                        {isEmergency && (
+                            <div style={{
+                                background: '#fee2e2',
+                                color: '#b91c1c',
+                                padding: '0.75rem',
+                                borderRadius: 'var(--radius-sm)',
+                                marginBottom: '1rem',
+                                fontWeight: 'bold',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                border: '1px solid #fca5a5'
+                            }}>
+                                🚨 EMERGENCY REQUEST - Please review immediately
+                            </div>
+                        )}
                         <div className="grid-2" style={{ marginBottom: '1.5rem', fontSize: '0.9rem' }}>
                             <div>
                                 <label style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Leave Dates</label>
@@ -245,18 +271,31 @@ const WardenDashboard = ({ user, onLogout }) => {
                 </div>
             </header>
 
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '1rem' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '1rem', overflowX: 'auto' }}>
                 <button
                     className={`btn ${filter === 'Pending' ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => setFilter('Pending')}
-                    style={{ flex: 1, justifyContent: 'center' }}
+                    style={{ flex: 1, minWidth: '100px', justifyContent: 'center' }}
                 >
-                    Pending Requests
+                    Pending
+                </button>
+                <button
+                    className={`btn ${filter === 'Emergency' ? 'btn-danger' : 'btn-secondary'}`}
+                    onClick={() => setFilter('Emergency')}
+                    style={{
+                        flex: 1,
+                        minWidth: '100px',
+                        justifyContent: 'center',
+                        backgroundColor: filter === 'Emergency' ? '#dc2626' : undefined,
+                        color: filter === 'Emergency' ? 'white' : undefined
+                    }}
+                >
+                    🚨 Emergency
                 </button>
                 <button
                     className={`btn ${filter === 'All' ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => setFilter('All')}
-                    style={{ flex: 1, justifyContent: 'center' }}
+                    style={{ flex: 1, minWidth: '100px', justifyContent: 'center' }}
                 >
                     History
                 </button>

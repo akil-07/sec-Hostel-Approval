@@ -275,3 +275,30 @@ export const fetchWardens = async () => {
         return [];
     }
 };
+// Fetch global config
+export const fetchConfig = async () => {
+    try {
+        const docRef = doc(db, "config", "global");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            return docSnap.data();
+        }
+        return { is24HourRuleEnabled: false }; // Default
+    } catch (error) {
+        console.error("Error fetching config:", error);
+        return { is24HourRuleEnabled: false };
+    }
+};
+
+// Update global config
+export const updateConfig = async (newConfig) => {
+    try {
+        const docRef = doc(db, "config", "global");
+        await setDoc(docRef, newConfig, { merge: true });
+        console.log("✅ Config updated:", newConfig);
+        return { status: 'success' };
+    } catch (error) {
+        console.error("❌ Error updating config:", error);
+        throw error;
+    }
+};
