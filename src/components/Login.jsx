@@ -3,9 +3,9 @@ import React, { useState } from 'react';
 import { fetchWardens } from '../api';
 
 const Login = ({ onLogin }) => {
-    const [role, setRole] = useState('student'); // 'student' or 'warden'
-    const [identifier, setIdentifier] = useState('');
+    const [regNumber, setRegNumber] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [availableWardens, setAvailableWardens] = useState([]);
 
     React.useEffect(() => {
@@ -16,19 +16,55 @@ const Login = ({ onLogin }) => {
         load();
     }, []);
 
+    // Detect if input looks like a warden/admin code
+    const detectUserType = (input) => {
+        const normalized = input.toLowerCase().trim();
+
+        // Admin code
+        if (normalized === 'admin1234') {
+            return { type: 'superadmin', identifier: 'admin' };
+        }
+
+        // Warden codes (hardcoded)
+        const wardenCodes = {
+            'pavi1234': 'Pavithrakannan',
+            'somu1234': 'Somu',
+            'ram1234': 'Raguram'
+        };
+
+        if (wardenCodes[normalized]) {
+            return { type: 'warden', identifier: wardenCodes[normalized] };
+        }
+
+        // Check dynamic wardens from Firebase
+        const dynamicWarden = availableWardens.find(w =>
+            normalized === `${w.name.toLowerCase().substring(0, 4)}1234`
+        );
+        if (dynamicWarden) {
+            return { type: 'warden', identifier: dynamicWarden.name };
+        }
+
+        // Default to student
+        return { type: 'student', identifier: input };
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (role === 'superadmin') {
-            if (identifier !== 'admin' || password !== 'admin123') {
-                alert("Invalid Admin Credentials");
+
+        const userType = detectUserType(regNumber);
+
+        // For wardens and admin, validate password
+        if (userType.type === 'superadmin') {
+            if (password !== 'admin123') {
+                alert("Invalid Admin Password");
                 return;
             }
-        } else if (role === 'warden') {
+        } else if (userType.type === 'warden') {
             // Check dynamic wardens first
-            const dynamicWarden = availableWardens.find(w => w.name === identifier);
+            const dynamicWarden = availableWardens.find(w => w.name === userType.identifier);
             if (dynamicWarden) {
                 if (dynamicWarden.password !== password) {
-                    alert(`Invalid Password for Warden ${identifier}`);
+                    alert(`Invalid Password for Warden ${userType.identifier}`);
                     return;
                 }
             } else {
@@ -38,14 +74,21 @@ const Login = ({ onLogin }) => {
                     'Somu': 'somu123',
                     'Raguram': 'ram123'
                 };
-                if (wardenCreds[identifier] !== password) {
-                    alert(`Invalid Password for Warden ${identifier}`);
+                if (wardenCreds[userType.identifier] !== password) {
+                    alert(`Invalid Password for Warden ${userType.identifier}`);
                     return;
                 }
             }
         }
-        onLogin(role, identifier);
+
+        onLogin(userType.type, userType.identifier);
     };
+
+    // Show password field when warden/admin code is detected
+    React.useEffect(() => {
+        const userType = detectUserType(regNumber);
+        setShowPassword(userType.type !== 'student');
+    }, [regNumber, availableWardens]);
 
     return (
         <div style={{
@@ -55,140 +98,72 @@ const Login = ({ onLogin }) => {
             minHeight: '100vh',
             padding: '1rem'
         }}>
-            <div className="card" style={{ width: '100%', maxWidth: '380px' }}>
+            <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
                     <h2 style={{ marginBottom: '0.5rem', color: 'var(--primary)' }}>Hostel Portal</h2>
-                    <p>Please sign in to continue</p>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '2rem', background: 'var(--bg-color)', padding: '0.25rem', borderRadius: 'var(--radius-md)' }}>
-                    <button
-                        className={`btn`}
-                        style={{
-                            border: 'none',
-                            borderRadius: 'var(--radius-sm)',
-                            backgroundColor: role === 'student' ? 'var(--card-bg)' : 'transparent',
-                            color: role === 'student' ? 'var(--primary)' : 'var(--text-secondary)',
-                            fontWeight: role === 'student' ? '600' : '500',
-                            boxShadow: role === 'student' ? 'var(--shadow-sm)' : 'none',
-                            fontSize: '0.875rem'
-                        }}
-                        onClick={() => setRole('student')}
-                    >
-                        Student
-                    </button>
-                    <button
-                        className={`btn`}
-                        style={{
-                            border: 'none',
-                            borderRadius: 'var(--radius-sm)',
-                            backgroundColor: role === 'warden' ? 'var(--card-bg)' : 'transparent',
-                            color: role === 'warden' ? 'var(--primary)' : 'var(--text-secondary)',
-                            fontWeight: role === 'warden' ? '600' : '500',
-                            boxShadow: role === 'warden' ? 'var(--shadow-sm)' : 'none',
-                            fontSize: '0.875rem'
-                        }}
-                        onClick={() => setRole('warden')}
-                    >
-                        Warden
-                    </button>
-                    <button
-                        className={`btn`}
-                        style={{
-                            border: 'none',
-                            borderRadius: 'var(--radius-sm)',
-                            backgroundColor: role === 'superadmin' ? 'var(--card-bg)' : 'transparent',
-                            color: role === 'superadmin' ? 'var(--primary)' : 'var(--text-secondary)',
-                            fontWeight: role === 'superadmin' ? '600' : '500',
-                            boxShadow: role === 'superadmin' ? 'var(--shadow-sm)' : 'none',
-                            fontSize: '0.875rem'
-                        }}
-                        onClick={() => setRole('superadmin')}
-                    >
-                        Admin
-                    </button>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Please sign in to continue</p>
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    {role === 'student' ? (
-                        <div className="mb-2">
-                            <label htmlFor="regNo">Register Number</label>
+                    <div className="mb-2">
+                        <label htmlFor="regNo">Register Number</label>
+                        <input
+                            id="regNo"
+                            type="text"
+                            placeholder="Enter your registration number"
+                            value={regNumber}
+                            onChange={(e) => setRegNumber(e.target.value)}
+                            required
+                            autoComplete="off"
+                        />
+                        <small style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
+                            e.g., 25013635
+                        </small>
+                    </div>
+
+                    {showPassword && (
+                        <div className="mb-2" style={{
+                            animation: 'fadeIn 0.3s ease-in',
+                            marginTop: '1rem'
+                        }}>
+                            <label htmlFor="password">Password</label>
                             <input
-                                id="regNo"
-                                type="text"
-                                placeholder="e.g. 912345678"
-                                value={identifier}
-                                onChange={(e) => setIdentifier(e.target.value)}
+                                id="password"
+                                type="password"
+                                placeholder="Enter your password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                                 required
+                                autoComplete="current-password"
                             />
                         </div>
-                    ) : role === 'warden' ? (
-                        <>
-                            <div className="mb-2">
-                                <label htmlFor="wardenSelect">Select Warden</label>
-                                <select
-                                    id="wardenSelect"
-                                    value={identifier}
-                                    onChange={(e) => setIdentifier(e.target.value)}
-                                    required
-                                >
-                                    <option value="">Select Warden...</option>
-                                    {availableWardens.length > 0 ? (
-                                        availableWardens.map((w) => (
-                                            <option key={w.id} value={w.name}>{w.name}</option>
-                                        ))
-                                    ) : (
-                                        <>
-                                            <option value="Pavithrakannan">Pavithrakannan</option>
-                                            <option value="Somu">Somu</option>
-                                            <option value="Raguram">Raguram</option>
-                                        </>
-                                    )}
-                                </select>
-                            </div>
-                            <div className="mb-2">
-                                <label htmlFor="password">Password</label>
-                                <input
-                                    id="password"
-                                    type="password"
-                                    placeholder="Enter Password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                />
-                            </div>
-                        </>
-                    ) : (
-                        <>
-                            <div className="mb-2">
-                                <label htmlFor="adminUser">Admin Username</label>
-                                <input
-                                    id="adminUser"
-                                    type="text"
-                                    placeholder="Enter Admin Username"
-                                    value={identifier}
-                                    onChange={(e) => setIdentifier(e.target.value)}
-                                    required
-                                />
-                            </div>
-                            <div className="mb-2">
-                                <label htmlFor="password">Password</label>
-                                <input
-                                    id="password"
-                                    type="password"
-                                    placeholder="Enter Password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                />
-                            </div>
-                        </>
                     )}
 
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', padding: '0.875rem' }}>
+                    <button
+                        type="submit"
+                        className="btn btn-primary"
+                        style={{
+                            width: '100%',
+                            marginTop: '1.5rem',
+                            padding: '0.875rem',
+                            fontSize: '1rem'
+                        }}
+                    >
                         Sign In
                     </button>
                 </form>
+
+                <div style={{
+                    marginTop: '1.5rem',
+                    padding: '1rem',
+                    background: 'var(--bg-color)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.85rem',
+                    color: 'var(--text-secondary)',
+                    lineHeight: '1.5'
+                }}>
+                    <strong style={{ color: 'var(--text-primary)' }}>Note:</strong> Students use their registration number. Staff members use their access code.
+                </div>
             </div>
         </div>
     );
