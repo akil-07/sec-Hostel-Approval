@@ -66,7 +66,7 @@ const WardenDashboard = ({ user, onLogout }) => {
 
         return (
             <div className="card" style={{ padding: '0', overflow: 'hidden', transition: 'all 0.2s ease' }}>
-                {/* Header - Always Visible (Click to Expand) */}
+                {/* Header - Single Line View */}
                 <div
                     onClick={() => setIsExpanded(!isExpanded)}
                     style={{
@@ -75,31 +75,26 @@ const WardenDashboard = ({ user, onLogout }) => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        background: isExpanded ? 'rgba(0,0,0,0.02)' : 'transparent'
+                        background: isExpanded ? 'rgba(0,0,0,0.02)' : 'transparent',
+                        gap: '1rem'
                     }}
                 >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
-                        <div style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '50%',
-                            background: 'var(--primary)',
-                            color: 'white',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 'bold',
-                            fontSize: '1.2rem'
-                        }}>
-                            {req['Student Name'] ? req['Student Name'].charAt(0) : '?'}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1, flexWrap: 'wrap' }}>
+                        <div style={{ fontWeight: '600', fontSize: '1.05rem', minWidth: '180px', color: 'var(--text-primary)' }}>
+                            {req['Student Name']}
                         </div>
-                        <div>
-                            <div style={{ fontWeight: '600', fontSize: '1.1rem', color: 'var(--text-primary)' }}>
-                                {req['Student Name']}
-                            </div>
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                                {req['Room']} • {dateRange}
-                            </div>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontFamily: 'monospace' }}>
+                            {req['Register Number']}
+                        </div>
+                        <div style={{
+                            fontSize: '0.9rem',
+                            color: 'var(--primary)',
+                            background: 'var(--bg-color)',
+                            padding: '0.2rem 0.6rem',
+                            borderRadius: 'var(--radius-sm)',
+                            fontWeight: '500'
+                        }}>
+                            {req['Room']}
                         </div>
                     </div>
 
@@ -119,7 +114,7 @@ const WardenDashboard = ({ user, onLogout }) => {
                     </div>
                 </div>
 
-                {/* Expanded Details - The "Drop Box" */}
+                {/* Expanded Details */}
                 {isExpanded && (
                     <div style={{
                         padding: '1.5rem',
@@ -128,8 +123,8 @@ const WardenDashboard = ({ user, onLogout }) => {
                     }}>
                         <div className="grid-2" style={{ marginBottom: '1.5rem', fontSize: '0.9rem' }}>
                             <div>
-                                <label style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Register Number</label>
-                                <div style={{ fontWeight: '500' }}>{req['Register Number']}</div>
+                                <label style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Leave Dates</label>
+                                <div style={{ fontWeight: '500', fontSize: '1.1rem', color: 'var(--primary)' }}>{dateRange}</div>
                             </div>
                             <div>
                                 <label style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Department & Year</label>
