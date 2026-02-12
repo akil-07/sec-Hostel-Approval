@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { addStudent, addWarden, fetchWardens, deleteAllLeaveRequests, fetchConfig, updateConfig, fetchAllStudents, deleteStudent, deleteWarden } from '../api';
+import { migrateStudentsToFirebase, checkMigrationStatus } from '../utils/migrateStudents';
 
 const SuperAdminDashboard = ({ onLogout }) => {
     const [activeTab, setActiveTab] = useState('students'); // 'students', 'wardens', 'settings', 'clean'
+    const [loading, setLoading] = useState(true);
+    const [loadingText, setLoadingText] = useState('Initializing...');
     const [studentForm, setStudentForm] = useState({
         regNo: '',
         name: '',
@@ -18,6 +21,21 @@ const SuperAdminDashboard = ({ onLogout }) => {
     const [statusMsg, setStatusMsg] = useState('');
     const [existingWardens, setExistingWardens] = useState([]);
     const [cleaning, setCleaning] = useState(false);
+    const [existingStudents, setExistingStudents] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [migrating, setMigrating] = useState(false);
+    const [migrationProgress, setMigrationProgress] = useState(null);
+
+    // Helper: Timeout for promises that returns a fallback value instead of throwing
+    const withTimeout = (promise, ms, fallbackValue) => {
+        return Promise.race([
+            promise,
+            new Promise((resolve) => setTimeout(() => {
+                console.warn("Request timed out, using fallback.");
+                resolve(fallbackValue);
+            }, ms))
+        ]);
+    };
 
     // Load initial data
     useEffect(() => {
@@ -25,11 +43,43 @@ const SuperAdminDashboard = ({ onLogout }) => {
     }, []);
 
     const loadData = async () => {
-        const wardens = await fetchWardens();
-        setExistingWardens(wardens);
+        setLoading(true);
+        setLoadingText('Syncing...');
+        setStatusMsg('');
 
-        const globalConfig = await fetchConfig();
-        setConfig(globalConfig);
+        try {
+            // Fetch all data in parallel with timeouts (10s), defaulting to empty arrays if they time out
+            const [wardens, students, globalConfig] = await Promise.all([
+                withTimeout(fetchWardens(), 10000, null),
+                withTimeout(fetchAllStudents(), 10000, null),
+                withTimeout(fetchConfig(), 10000, null)
+            ]);
+
+            // processing results
+            const failedList = [];
+
+            if (wardens !== null) setExistingWardens(wardens);
+            else failedList.push("Wardens");
+
+            if (students !== null) setExistingStudents(students);
+            else failedList.push("Students");
+
+            if (globalConfig !== null) setConfig(globalConfig);
+            else failedList.push("Config");
+
+            if (failedList.length > 0) {
+                setStatusMsg(`⚠️ Offline Mode: Could not sync ${failedList.join(", ")}. Using empty/default data.`);
+            } else {
+                // optional success message, or just clear
+                // setStatusMsg("✅ Data synced successfully");
+            }
+
+        } catch (error) {
+            console.error("System error loading data:", error);
+            setStatusMsg("❌ System Error: " + error.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleStudentSubmit = async (e) => {
@@ -111,6 +161,57 @@ const SuperAdminDashboard = ({ onLogout }) => {
         }
     };
 
+    const handleMigration = async () => {
+        if (!window.confirm("📤 MIGRATE STUDENTS TO FIREBASE\n\nThis will upload all 171 students from the Excel sheet to Firebase.\n\nExisting students will be updated (merged).\n\nDo you want to proceed?")) {
+            return;
+        }
+
+        setMigrating(true);
+        setMigrationProgress({ current: 0, total: 171, successCount: 0, errorCount: 0 });
+        setStatusMsg("⏳ Starting migration... Please wait...");
+
+        try {
+            const result = await migrateStudentsToFirebase((progress) => {
+                setMigrationProgress(progress);
+                setStatusMsg(`⏳ Migrating students: ${progress.current}/${progress.total} (${progress.successCount} successful)`);
+            });
+
+            if (result.success) {
+                setStatusMsg(`✅ Successfully migrated ${result.successCount} students to Firebase!`);
+            } else {
+                setStatusMsg(`⚠️ Migration completed with ${result.errorCount} errors. ${result.successCount} students uploaded successfully.`);
+            }
+
+            // Reload student list
+            await loadData();
+        } catch (error) {
+            setStatusMsg(`❌ Migration failed: ${error.message}`);
+        } finally {
+            setMigrating(false);
+            setMigrationProgress(null);
+        }
+    };
+
+    // Safe filtering logic
+    const safeStudents = Array.isArray(existingStudents) ? existingStudents : [];
+    const filteredStudents = safeStudents.filter(s => {
+        const term = (searchTerm || '').toLowerCase();
+        return (
+            (s.name && s.name.toLowerCase().includes(term)) ||
+            (s.regNo && s.regNo.toString().toLowerCase().includes(term)) ||
+            (s.id && s.id.toString().toLowerCase().includes(term))
+        );
+    });
+
+    if (loading) {
+        return (
+            <div className="container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
+                <p>Loading Dashboard...</p>
+                <small style={{ color: '#6b7280', marginTop: '0.5rem' }}>{loadingText}</small>
+            </div>
+        );
+    }
+
     return (
         <div className="container">
             <header className="page-header">
@@ -118,7 +219,10 @@ const SuperAdminDashboard = ({ onLogout }) => {
                     <h1 className="page-title">Super Admin Portal</h1>
                     <p className="page-subtitle">Manage system users and configurations</p>
                 </div>
-                <button className="btn btn-secondary" onClick={onLogout}>Logout</button>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button className="btn btn-secondary" onClick={loadData} title="Retry Sync">🔄 Sync</button>
+                    <button className="btn btn-secondary" onClick={onLogout}>Logout</button>
+                </div>
             </header>
 
             {statusMsg && (
@@ -173,6 +277,48 @@ const SuperAdminDashboard = ({ onLogout }) => {
 
             {activeTab === 'students' ? (
                 <div className="card">
+                    {/* Migration Section */}
+                    <div style={{
+                        padding: '1rem',
+                        marginBottom: '2rem',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        borderRadius: 'var(--radius-md)',
+                        color: 'white'
+                    }}>
+                        <h3 style={{ marginTop: 0, color: 'white' }}>📤 Bulk Student Migration</h3>
+                        <p style={{ margin: '0.5rem 0', fontSize: '0.9rem', opacity: 0.9 }}>
+                            Upload all 171 students from the Excel sheet to Firebase in one click. This will enable auto-fill functionality for all students.
+                        </p>
+                        <button
+                            className="btn"
+                            onClick={handleMigration}
+                            disabled={migrating}
+                            style={{
+                                marginTop: '1rem',
+                                backgroundColor: 'white',
+                                color: '#667eea',
+                                fontWeight: '600'
+                            }}
+                        >
+                            {migrating ? '⏳ Migrating...' : '📤 Migrate All Students to Firebase'}
+                        </button>
+                        {migrationProgress && (
+                            <div style={{ marginTop: '1rem', background: 'rgba(255,255,255,0.2)', padding: '0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                                <div style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                                    Progress: {migrationProgress.current}/{migrationProgress.total} students
+                                </div>
+                                <div style={{ background: 'rgba(255,255,255,0.3)', borderRadius: '4px', height: '8px', overflow: 'hidden' }}>
+                                    <div style={{
+                                        background: 'white',
+                                        height: '100%',
+                                        width: `${(migrationProgress.current / migrationProgress.total) * 100}%`,
+                                        transition: 'width 0.3s ease'
+                                    }}></div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                     <h3 style={{ marginTop: 0 }}>Add New Student</h3>
                     <form onSubmit={handleStudentSubmit} style={{ marginBottom: '2rem' }}>
                         <div className="grid-2">
@@ -255,15 +401,7 @@ const SuperAdminDashboard = ({ onLogout }) => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {existingStudents.filter(s =>
-                                    (s.name && s.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                                    (s.regNo && s.regNo.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
-                                    (s.id && s.id.toString().toLowerCase().includes(searchTerm.toLowerCase()))
-                                ).length > 0 ? existingStudents.filter(s =>
-                                    (s.name && s.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                                    (s.regNo && s.regNo.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
-                                    (s.id && s.id.toString().toLowerCase().includes(searchTerm.toLowerCase()))
-                                ).map((s, idx) => (
+                                {filteredStudents.length > 0 ? filteredStudents.map((s, idx) => (
                                     <tr key={idx} style={{ borderBottom: '1px solid var(--card-border)' }}>
                                         <td style={{ padding: '0.75rem', fontFamily: 'monospace' }}>{s.id || s.regNo}</td>
                                         <td style={{ padding: '0.75rem' }}>{s.name}</td>
