@@ -181,7 +181,10 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
                         padding: '1rem',
                         background: isEmergency ? '#fee2e2' : 'var(--bg-color)',
                         border: isEmergency ? '1px solid #f87171' : '1px solid var(--card-border)',
-                        borderRadius: 'var(--radius-md)'
+                        borderRadius: 'var(--radius-md)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.5rem'
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                             <input
@@ -189,13 +192,18 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
                                 id="emergencyCheck"
                                 checked={isEmergency}
                                 onChange={(e) => setIsEmergency(e.target.checked)}
-                                style={{ transform: 'scale(1.2)' }}
+                                style={{
+                                    transform: 'scale(1.2)',
+                                    width: 'auto',
+                                    margin: 0,
+                                    cursor: 'pointer'
+                                }}
                             />
-                            <label htmlFor="emergencyCheck" style={{ fontWeight: '600', color: isEmergency ? '#dc2626' : 'var(--text-primary)', cursor: 'pointer' }}>
+                            <label htmlFor="emergencyCheck" style={{ fontWeight: '600', color: isEmergency ? '#dc2626' : 'var(--text-primary)', cursor: 'pointer', margin: 0 }}>
                                 This is an EMERGENCY Request
                             </label>
                         </div>
-                        <p style={{ margin: '0.5rem 0 0 2rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        <p style={{ margin: '0 0 0 2rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                             Check this only for urgent medical or family emergencies. This will be flagged to the warden.
                         </p>
                     </div>
