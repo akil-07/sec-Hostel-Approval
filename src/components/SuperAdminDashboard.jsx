@@ -279,37 +279,38 @@ const SuperAdminDashboard = ({ onLogout }) => {
                 <div className="card">
                     {/* Migration Section */}
                     <div style={{
-                        padding: '1rem',
+                        padding: '1.5rem',
                         marginBottom: '2rem',
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        background: '#ffffff',
+                        border: '1px solid #e5e7eb',
                         borderRadius: 'var(--radius-md)',
-                        color: 'white'
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                     }}>
-                        <h3 style={{ marginTop: 0, color: 'white' }}>📤 Bulk Student Migration</h3>
-                        <p style={{ margin: '0.5rem 0', fontSize: '0.9rem', opacity: 0.9 }}>
-                            Upload all 171 students from the Excel sheet to Firebase in one click. This will enable auto-fill functionality for all students.
+                        <h3 style={{ marginTop: 0, color: '#111827', fontSize: '1.1rem', fontWeight: '600' }}>
+                            Bulk Student Migration
+                        </h3>
+                        <p style={{ margin: '0.5rem 0 1rem 0', fontSize: '0.9rem', color: '#6b7280', lineHeight: '1.5' }}>
+                            Upload all 171 students from the Excel sheet to Firebase. This will enable auto-fill functionality for all students.
                         </p>
                         <button
-                            className="btn"
+                            className="btn btn-primary"
                             onClick={handleMigration}
                             disabled={migrating}
                             style={{
-                                marginTop: '1rem',
-                                backgroundColor: 'white',
-                                color: '#667eea',
-                                fontWeight: '600'
+                                padding: '0.6rem 1.2rem',
+                                fontSize: '0.9rem'
                             }}
                         >
-                            {migrating ? '⏳ Migrating...' : '📤 Migrate All Students to Firebase'}
+                            {migrating ? 'Migrating...' : 'Migrate All Students to Firebase'}
                         </button>
                         {migrationProgress && (
-                            <div style={{ marginTop: '1rem', background: 'rgba(255,255,255,0.2)', padding: '0.75rem', borderRadius: 'var(--radius-sm)' }}>
-                                <div style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                            <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#f9fafb', borderRadius: 'var(--radius-sm)', border: '1px solid #e5e7eb' }}>
+                                <div style={{ fontSize: '0.85rem', marginBottom: '0.5rem', color: '#374151', fontWeight: '500' }}>
                                     Progress: {migrationProgress.current}/{migrationProgress.total} students
                                 </div>
-                                <div style={{ background: 'rgba(255,255,255,0.3)', borderRadius: '4px', height: '8px', overflow: 'hidden' }}>
+                                <div style={{ background: '#e5e7eb', borderRadius: '4px', height: '6px', overflow: 'hidden' }}>
                                     <div style={{
-                                        background: 'white',
+                                        background: '#3b82f6',
                                         height: '100%',
                                         width: `${(migrationProgress.current / migrationProgress.total) * 100}%`,
                                         transition: 'width 0.3s ease'
