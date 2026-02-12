@@ -94,9 +94,9 @@ const Login = ({ onLogin }) => {
 
             // Check if the email is authorized as a warden
             const authorizedWardenEmails = [
-                'pavithrakannan@example.com',
-                'somu@example.com',
-                'raguram@example.com'
+                'akilsudhagar7@gmail.com',  // Pavithrakannan
+                'akilsudhagar19@gmail.com', // Somu
+                'akilsudhagar69@gmail.com'  // Raguram
             ];
 
             // Also check dynamic wardens
@@ -109,11 +109,11 @@ const Login = ({ onLogin }) => {
                 const dynamicWarden = availableWardens.find(w => w.email === user.email);
                 if (dynamicWarden) {
                     wardenName = dynamicWarden.name;
-                } else if (user.email === 'pavithrakannan@example.com') {
+                } else if (user.email === 'akilsudhagar7@gmail.com') {
                     wardenName = 'Pavithrakannan';
-                } else if (user.email === 'somu@example.com') {
+                } else if (user.email === 'akilsudhagar19@gmail.com') {
                     wardenName = 'Somu';
-                } else if (user.email === 'raguram@example.com') {
+                } else if (user.email === 'akilsudhagar69@gmail.com') {
                     wardenName = 'Raguram';
                 }
 
