@@ -302,3 +302,44 @@ export const updateConfig = async (newConfig) => {
         throw error;
     }
 };
+
+// Fetch all students (for management)
+export const fetchAllStudents = async () => {
+    try {
+        const q = query(collection(db, "students"));
+        const querySnapshot = await getDocs(q);
+        const students = [];
+        querySnapshot.forEach((doc) => {
+            students.push({ id: doc.id, ...doc.data() });
+        });
+        return students;
+    } catch (error) {
+        console.error("Error fetching students:", error);
+        return [];
+    }
+};
+
+// Delete a student
+export const deleteStudent = async (regNo) => {
+    try {
+        const normalizedRegNo = regNo.toString().trim().toUpperCase();
+        await deleteDoc(doc(db, "students", normalizedRegNo));
+        console.log("✅ Student deleted:", normalizedRegNo);
+        return { status: 'success' };
+    } catch (error) {
+        console.error("❌ Error deleting student:", error);
+        throw error;
+    }
+};
+
+// Delete a warden
+export const deleteWarden = async (id) => {
+    try {
+        await deleteDoc(doc(db, "wardens", id));
+        console.log("✅ Warden deleted:", id);
+        return { status: 'success' };
+    } catch (error) {
+        console.error("❌ Error deleting warden:", error);
+        throw error;
+    }
+};

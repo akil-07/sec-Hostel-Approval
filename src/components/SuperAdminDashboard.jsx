@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { addStudent, addWarden, fetchWardens, deleteAllLeaveRequests, fetchConfig, updateConfig } from '../api';
+import { addStudent, addWarden, fetchWardens, deleteAllLeaveRequests, fetchConfig, updateConfig, fetchAllStudents, deleteStudent, deleteWarden } from '../api';
 
 const SuperAdminDashboard = ({ onLogout }) => {
     const [activeTab, setActiveTab] = useState('students'); // 'students', 'wardens', 'settings', 'clean'
@@ -38,8 +38,20 @@ const SuperAdminDashboard = ({ onLogout }) => {
             await addStudent(studentForm);
             setStatusMsg(`✅ Student ${studentForm.name} added successfully!`);
             setStudentForm({ regNo: '', name: '', room: '', year: '', dept: '' }); // Reset
+            loadData();
         } catch (error) {
             setStatusMsg(`❌ Error adding student: ${error.message}`);
+        }
+    };
+
+    const handleDeleteStudent = async (regNo) => {
+        if (!window.confirm(`Are you sure you want to delete student ${regNo}?`)) return;
+        try {
+            await deleteStudent(regNo);
+            setStatusMsg(`✅ Student ${regNo} deleted successfully.`);
+            loadData();
+        } catch (error) {
+            setStatusMsg(`❌ Error deleting student: ${error.message}`);
         }
     };
 
@@ -52,6 +64,17 @@ const SuperAdminDashboard = ({ onLogout }) => {
             loadData(); // Refresh list
         } catch (error) {
             setStatusMsg(`❌ Error adding warden: ${error.message}`);
+        }
+    };
+
+    const handleDeleteWarden = async (id, name) => {
+        if (!window.confirm(`Are you sure you want to delete warden ${name}?`)) return;
+        try {
+            await deleteWarden(id);
+            setStatusMsg(`✅ Warden ${name} deleted successfully.`);
+            loadData();
+        } catch (error) {
+            setStatusMsg(`❌ Error deleting warden: ${error.message}`);
         }
     };
 
@@ -117,7 +140,7 @@ const SuperAdminDashboard = ({ onLogout }) => {
                     onClick={() => { setActiveTab('students'); setStatusMsg(''); }}
                     style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0, flex: 1 }}
                 >
-                    Add Students
+                    Manage Students
                 </button>
                 <button
                     className={`btn ${activeTab === 'wardens' ? 'btn-primary' : 'btn-secondary'}`}
@@ -151,7 +174,7 @@ const SuperAdminDashboard = ({ onLogout }) => {
             {activeTab === 'students' ? (
                 <div className="card">
                     <h3 style={{ marginTop: 0 }}>Add New Student</h3>
-                    <form onSubmit={handleStudentSubmit}>
+                    <form onSubmit={handleStudentSubmit} style={{ marginBottom: '2rem' }}>
                         <div className="grid-2">
                             <div className="mb-2">
                                 <label>Register Number</label>
@@ -209,6 +232,63 @@ const SuperAdminDashboard = ({ onLogout }) => {
                             Add Student
                         </button>
                     </form>
+
+                    <h3 style={{ borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>All Students ({existingStudents.length})</h3>
+
+                    <div className="mb-2">
+                        <input
+                            placeholder="🔍 Search by Name or Register Number..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{ width: '100%', padding: '0.75rem' }}
+                        />
+                    </div>
+
+                    <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                            <thead style={{ background: 'var(--bg-color)', textAlign: 'left' }}>
+                                <tr>
+                                    <th style={{ padding: '0.75rem' }}>Reg No</th>
+                                    <th style={{ padding: '0.75rem' }}>Name</th>
+                                    <th style={{ padding: '0.75rem' }}>Room</th>
+                                    <th style={{ padding: '0.75rem' }}>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {existingStudents.filter(s =>
+                                    (s.name && s.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                                    (s.regNo && s.regNo.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
+                                    (s.id && s.id.toString().toLowerCase().includes(searchTerm.toLowerCase()))
+                                ).length > 0 ? existingStudents.filter(s =>
+                                    (s.name && s.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                                    (s.regNo && s.regNo.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
+                                    (s.id && s.id.toString().toLowerCase().includes(searchTerm.toLowerCase()))
+                                ).map((s, idx) => (
+                                    <tr key={idx} style={{ borderBottom: '1px solid var(--card-border)' }}>
+                                        <td style={{ padding: '0.75rem', fontFamily: 'monospace' }}>{s.id || s.regNo}</td>
+                                        <td style={{ padding: '0.75rem' }}>{s.name}</td>
+                                        <td style={{ padding: '0.75rem' }}>{s.room}</td>
+                                        <td style={{ padding: '0.75rem' }}>
+                                            <button
+                                                className="btn btn-danger"
+                                                style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }}
+                                                onClick={() => handleDeleteStudent(s.id || s.regNo)}
+                                            >
+                                                Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                )) : (
+                                    <tr>
+                                        <td colSpan="4" style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                            No students found matching your search.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
                 </div>
             ) : activeTab === 'wardens' ? (
                 <div className="card">
