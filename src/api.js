@@ -30,6 +30,27 @@ export const deleteAllLeaveRequests = async () => {
     }
 };
 
+// compressImage function removed from here as it is defined later
+
+export const fetchRequests = async () => {
+    try {
+        // Fetch from Firestore (Primary Database)
+        const q = query(collection(db, "leave_requests"), orderBy("timestamp", "desc"));
+        const querySnapshot = await getDocs(q);
+        const requests = [];
+        querySnapshot.forEach((doc) => {
+            requests.push({ id: doc.id, ...doc.data() });
+        });
+        return requests;
+    } catch (error) {
+        console.error("Error fetching data from Firebase:", error);
+        if (error.code === 'permission-denied') {
+            return [];
+        }
+        return [];
+    }
+};
+
 // Helper to compress and convert image to Base64
 const compressImage = (file) => {
     return new Promise((resolve, reject) => {
@@ -77,78 +98,29 @@ const compressImage = (file) => {
     });
 };
 
-export const fetchRequests = async () => {
-    try {
-        // Fetch from Firestore (Primary Database)
-        const q = query(collection(db, "leave_requests"), orderBy("timestamp", "desc"));
-        const querySnapshot = await getDocs(q);
-        const requests = [];
-        querySnapshot.forEach((doc) => {
-            requests.push({ id: doc.id, ...doc.data() });
-        });
-        return requests;
-    } catch (error) {
-        console.error("Error fetching data from Firebase:", error);
-        if (error.code === 'permission-denied') {
-            return [];
-        }
-        return [];
-    }
-};
-
 export const submitRequest = async (formData) => {
     let imageBase64 = '';
 
-    // STEP 1: Compress and Convert Image to Base64 (if file exists)
+    // STEP 1: Compress and Convert Image to Base64
     if (formData.rawFile) {
         try {
-            console.log("📸 Compressing and converting image to Base64...");
-            console.log("File details:", {
-                name: formData.rawFile.name,
-                size: formData.rawFile.size,
-                type: formData.rawFile.type
-            });
-
-            // Compress and convert to Base64
+            console.log("📸 Compressing image...");
             imageBase64 = await compressImage(formData.rawFile);
-
             const sizeKB = Math.round((imageBase64.length * 3) / 4 / 1024);
-            console.log(`✅ Image compressed to Base64 (${sizeKB} KB)`);
-
+            console.log(`✅ Image compressed (${sizeKB} KB)`);
         } catch (error) {
             console.error("❌ Error compressing image:", error);
             alert(`Failed to process image: ${error.message}`);
-            // Continue without image
-            imageBase64 = '';
         }
     }
 
-    // STEP 2: Submit to Google Sheets (Backup Copy - Optional)
-    const payload = {
-        action: 'create',
-        ...formData,
-        fileData: imageBase64 || formData.fileData || ''
-    };
-
-    let googleResponse = {};
-    try {
-        const response = await fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
-        googleResponse = await response.json();
-        console.log("📊 Google Sheets backup response:", googleResponse);
-    } catch (error) {
-        console.error("⚠️ Error submitting to Google Sheets (Backup):", error);
-        // We continue even if backup fails, as Firebase is primary now.
-    }
-
-    // STEP 3: Submit to Firebase Firestore (Primary Database)
+    // STEP 2: Save to Firestore (PRIMARY - App Data)
+    // We store the Base64 image directly so the app doesn't depend on external links
+    let docId = null;
     try {
         console.log("💾 Saving to Firestore database...");
 
         const firestoreData = {
-            // Mapped Keys for Frontend Compatibility
             'Register Number': formData.regNo,
             'Student Name': formData.name,
             'Year': formData.year,
@@ -160,42 +132,64 @@ export const submitRequest = async (formData) => {
             'Leaving date': formData.leavingDate,
             'Date of return': formData.returnDate,
 
-            // Store Base64 image data
+            // STORE BASE64 DIRECTLY - Ensures App works independently
             'letter image': imageBase64,
             'fileData': imageBase64,
-            'Letter Image URL': googleResponse.fileUrl || '',
+            'fileUrl': '', // No URL yet
 
-            // Other fields
             'Approval': 'Pending',
             'Remarks': '',
-
-            // Include other form fields
             outTime: formData.outTime,
             numDays: formData.numDays,
             letterSigned: formData.letterSigned,
             fileName: formData.fileName || '',
             mimeType: formData.mimeType || '',
             warden: formData.warden,
-
-            // Meta
-            timestamp: new Date().toISOString(),
-            sheetRow: googleResponse.row || null
+            timestamp: new Date().toISOString()
         };
 
-        // Remove rawFile object (not serializable)
-        if (firestoreData.rawFile) delete firestoreData.rawFile;
-
         const docRef = await addDoc(collection(db, "leave_requests"), firestoreData);
-        console.log("✅ Document written to Firebase with ID:", docRef.id);
-        console.log("✅ Image saved as Base64 data");
+        docId = docRef.id;
+        console.log("✅ Saved to Firestore with ID:", docId);
 
-        return { status: 'success', id: docRef.id };
     } catch (error) {
-        console.error("❌ Error submitting request to Firebase:", error);
-        console.error("Error details:", error.message);
-        alert(`Failed to submit request: ${error.message}`);
+        console.error("❌ Firestore Save Error:", error);
+        alert("Failed to save request. Please try again.");
         throw error;
     }
+
+    // STEP 3: Send to Google Sheets (SECONDARY - Excel/Drive Backup)
+    // We do this AFTER Firestore so the user's request is already safe.
+    try {
+        console.log("📤 Sending to Google Script (Background)...");
+
+        const payload = {
+            action: 'create',
+            ...formData,
+            id: docId, // Link rows if needed
+            fileData: imageBase64,
+            fileName: formData.fileName || (imageBase64 ? 'image.jpg' : '')
+        };
+
+        // Fire and forget (or await but ignore errors) allows the UI to be snappy
+        // But we'll await with a short timeout to try and log success
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout for backup
+
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            signal: controller.signal
+        })
+            .then(res => res.json())
+            .then(data => console.log("📊 Google Sheet updated:", data))
+            .catch(err => console.warn("⚠️ Google Sheet backup skipped/failed (Non-critical):", err));
+
+    } catch (error) {
+        console.warn("⚠️ Google Script error:", error);
+    }
+
+    return { status: 'success', id: docId };
 };
 
 export const updateRequest = async (id, status, remarks) => {

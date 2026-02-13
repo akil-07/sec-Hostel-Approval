@@ -1,3 +1,11 @@
+# 📄 FULL Google Apps Script Code (with Folder Support)
+
+This is specific code to save uploaded files into your **"1ZAmB3y1Egkur5LCnDo7F7hEUv0TkNLJD"** folder.
+
+### 📝 Step 1: Copy-Paste
+Delete everything in your Google Script `Code.gs` and paste this ENTIRE block:
+
+```javascript
 function doGet(e) {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("LeaveRequests");
     if (!sheet) {
@@ -8,7 +16,6 @@ function doGet(e) {
     var headers = data[0];
     var rows = data.slice(1);
 
-    // Convert to array of objects
     var result = rows.map(function (row, index) {
         var obj = {};
         headers.forEach(function (header, i) {
@@ -30,31 +37,29 @@ function doPost(e) {
         var action = params.action;
 
         if (action === "create") {
-            // --- 1. HANDLE FILE UPLOAD TO DRIVE ---
+            // --- 1. HANDLE FILE UPLOAD TO FOLDER ---
             var fileUrl = "";
             if (params.fileData && params.fileName) {
                 try {
-                    // Extract Base64 data
                     var data = params.fileData.indexOf(",") > -1 ? params.fileData.split(",")[1] : params.fileData;
                     var blob = Utilities.newBlob(Utilities.base64Decode(data), params.mimeType, params.fileName);
-
-                    // Folder ID provided by user: 1ZAmB3y1Egkur5LCnDo7F7hEUv0TkNLJD
+                    
+                    // 👉 Your Folder ID
                     var folderId = "1ZAmB3y1Egkur5LCnDo7F7hEUv0TkNLJD";
                     var folder;
-
+                    
                     try {
                         folder = DriveApp.getFolderById(folderId);
                     } catch (e) {
-                        folder = DriveApp.getRootFolder(); // Fallback
+                        folder = DriveApp.getRootFolder(); // Fallback if folder missing
                     }
-
-                    // Create file in the specific folder
+                    
                     var file = folder.createFile(blob);
-
+                    
                     // Allow anyone to view (Important for App display)
                     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-
-                    fileUrl = file.getUrl();
+                    
+                    fileUrl = file.getUrl(); 
                 } catch (err) {
                     fileUrl = "Upload Error: " + err.toString();
                 }
@@ -70,7 +75,7 @@ function doPost(e) {
                 params.parentMobile,
                 params.room,
                 params.reason,
-                params.floorInCharge || "",
+                params.floorInCharge || "", 
                 params.leaveDates || "",
                 params.numDays,
                 params.leavingDate,
@@ -80,29 +85,52 @@ function doPost(e) {
                 "Pending",            // Approval
                 "",                   // Remarks
                 Utilities.getUuid(),  // ID
-                fileUrl               // Column T: Letter Image URL (Clickable Link!)
+                fileUrl               // Column T: Letter Image URL
             ];
 
             sheet.appendRow(newRow);
 
-            // RETURN URL TO APP
-            return ContentService.createTextOutput(JSON.stringify({
-                status: "success",
+            return ContentService.createTextOutput(JSON.stringify({ 
+                status: "success", 
                 message: "Request Submitted",
-                fileUrl: fileUrl,
+                fileUrl: fileUrl,   
                 row: sheet.getLastRow()
             })).setMimeType(ContentService.MimeType.JSON);
+
         } else if (action === "update") {
-            // ... existing update logic ...
-            return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
+             // ... existing update logic ...
+             var id = params.id;
+             var status = params.status;
+             var remarks = params.remarks;
+ 
+             var data = sheet.getDataRange().getValues();
+             var rowIndex = -1;
+ 
+             for (var i = 1; i < data.length; i++) {
+                 if (data[i][18] == id) {
+                     rowIndex = i + 1;
+                     break;
+                 }
+             }
+ 
+             if (rowIndex !== -1) {
+                 sheet.getRange(rowIndex, 17).setValue(status);
+                 sheet.getRange(rowIndex, 18).setValue(remarks);
+                 return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Updated successfully" })).setMimeType(ContentService.MimeType.JSON);
+             } else {
+                 return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "ID not found" })).setMimeType(ContentService.MimeType.JSON);
+             }
         }
     } catch (error) {
         return ContentService.createTextOutput(JSON.stringify({ status: "error", message: error.toString() })).setMimeType(ContentService.MimeType.JSON);
     }
 }
+```
 
-// ⬇️ RUN THIS FUNCTION TO FIX PERMISSIONS ⬇️
-function checkPermissions() {
-    DriveApp.getRootFolder();
-    console.log("✅ Permissions are active. You can now Deploy.");
-}
+### 🚀 Step 2: REDEPLOY (Required)
+1.  Click **Deploy** > **Manage Deployments**.
+2.  Click **Edit** (pencil icon).
+3.  **Version:** Select **"New version"**.
+4.  Click **Deploy**.
+
+Now all new uploads will be neatly organized inside your folder!
