@@ -70,6 +70,10 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
                 }));
             } else {
                 // 2. Fallback to Static Data (First time user)
+                // 2. Fallback to Static Data (First time user)
+                // DISABLED: User requested that deleted students should not appear. 
+                // Only students explicitly in the database (or migrated) will be found.
+                /*
                 const staticInfo = getStudentInfo(regNo);
                 if (staticInfo) {
                     console.log('ℹ️ Using static fallback data:', staticInfo);
@@ -79,6 +83,7 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
                         room: staticInfo.room || prev.room
                     }));
                 }
+                */
             }
         };
         loadStudentData();
