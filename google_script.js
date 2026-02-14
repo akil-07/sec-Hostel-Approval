@@ -80,7 +80,8 @@ function doPost(e) {
                 "Pending",            // Approval
                 "",                   // Remarks
                 Utilities.getUuid(),  // ID
-                fileUrl               // Column T: Letter Image URL (Clickable Link!)
+                fileUrl,              // Column T: Letter Image URL (Clickable Link!)
+                params.requestType || "Normal" // Column U: Request Type
             ];
 
             sheet.appendRow(newRow);

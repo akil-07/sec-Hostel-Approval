@@ -16,7 +16,8 @@ const WardenDashboard = ({ user, onLogout }) => {
             // If the request has a warden field, match it. 
             // If it doesn't (older data), maybe show it to everyone or filter it out.
             // For now, let's show only matching warden requests
-            return r['warden'] === user.identifier || r['Warden'] === user.identifier;
+            // ALSO SHOW ALL EMERGENCY REQUESTS regardless of warden assignment
+            return r['warden'] === user.identifier || r['Warden'] === user.identifier || r['requestType'] === 'Emergency';
         });
         setRequests(myWardenRequests.reverse());
         setLoading(false);

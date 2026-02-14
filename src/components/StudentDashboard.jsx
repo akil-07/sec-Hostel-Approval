@@ -95,10 +95,28 @@ const StudentDashboard = ({ user, onLogout }) => {
                                                     {req['Reason'] || req['reason']}
                                                 </div>
                                             </div>
-                                            <div className={`status-badge ${status === 'Approved' ? 'status-approved' :
-                                                status === 'Rejected' ? 'status-rejected' : 'status-pending'
-                                                }`}>
-                                                {status}
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                                                {req['requestType'] === 'Emergency' && (
+                                                    <div style={{
+                                                        background: '#fee2e2',
+                                                        color: '#b91c1c',
+                                                        padding: '0.25rem 0.5rem',
+                                                        borderRadius: '4px',
+                                                        fontSize: '0.7rem',
+                                                        fontWeight: 'bold',
+                                                        border: '1px solid #fca5a5',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.25rem'
+                                                    }}>
+                                                        🚨 EMERGENCY
+                                                    </div>
+                                                )}
+                                                <div className={`status-badge ${status === 'Approved' ? 'status-approved' :
+                                                    status === 'Rejected' ? 'status-rejected' : 'status-pending'
+                                                    }`}>
+                                                    {status}
+                                                </div>
                                             </div>
                                         </div>
 

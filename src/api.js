@@ -145,6 +145,7 @@ export const submitRequest = async (formData) => {
             fileName: formData.fileName || '',
             mimeType: formData.mimeType || '',
             warden: formData.warden,
+            requestType: formData.requestType, // 'Emergency' or 'Normal'
             timestamp: new Date().toISOString()
         };
 
