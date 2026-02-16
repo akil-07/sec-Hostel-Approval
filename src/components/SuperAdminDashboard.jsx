@@ -99,9 +99,14 @@ const SuperAdminDashboard = ({ onLogout }) => {
         try {
             await deleteStudent(regNo);
             setStatusMsg(`✅ Student ${regNo} deleted successfully.`);
-            loadData();
+
+            // Optimistic update: Remove from local state immediately
+            setExistingStudents(prev => prev.filter(s => s.id !== regNo && s.regNo !== regNo));
+
         } catch (error) {
             setStatusMsg(`❌ Error deleting student: ${error.message}`);
+            // If error, maybe reload to be safe
+            loadData();
         }
     };
 
