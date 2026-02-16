@@ -395,31 +395,44 @@ const SuperAdminDashboard = ({ onLogout }) => {
                             Manage the student database in bulk. You can upload a new Excel file to add/update students or clear the entire database.
                         </p>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem' }}>
                             {/* Upload Section */}
-                            <div style={{ padding: '1rem', background: '#f9fafb', borderRadius: 'var(--radius-sm)', border: '1px solid #e5e7eb' }}>
-                                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem' }}>📤 Upload / Update</h4>
-                                <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '1rem' }}>
+                            <div style={{ padding: '1.5rem', background: '#f9fafb', borderRadius: 'var(--radius-sm)', border: '1px solid #e5e7eb' }}>
+                                <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    📤 Upload / Update
+                                </h4>
+                                <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '1.5rem' }}>
                                     Upload an Excel file (.xlsx) with columns: <strong>Roll Number, Register Number, Student Name, Room Number, Department, Year, Mobile</strong>.
                                 </p>
-                                <input
-                                    type="file"
-                                    accept=".xlsx, .xls"
-                                    onChange={handleFileUpload}
-                                    style={{ marginBottom: '0.5rem', width: '100%', fontSize: '0.9rem' }}
-                                    disabled={migrating}
-                                />
-                                {uploadStats && (
-                                    <div style={{ fontSize: '0.85rem', color: '#059669', marginBottom: '0.5rem' }}>
-                                        ✅ Ready to upload {uploadStats} students
-                                    </div>
-                                )}
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <input
+                                        type="file"
+                                        accept=".xlsx, .xls"
+                                        onChange={handleFileUpload}
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.5rem',
+                                            fontSize: '0.9rem',
+                                            border: '1px solid #d1d5db',
+                                            borderRadius: '4px',
+                                            background: 'white'
+                                        }}
+                                        disabled={migrating}
+                                    />
+                                    {uploadStats && (
+                                        <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#059669', fontWeight: '500' }}>
+                                            ✅ Ready to upload {uploadStats} students
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                                     <button
                                         className="btn btn-primary"
                                         onClick={() => handleMigration(parsedData)} // Pass parsed data
                                         disabled={!parsedData || migrating}
-                                        style={{ width: '100%', fontSize: '0.9rem' }}
+                                        style={{ flex: 1, minWidth: '140px', fontSize: '0.9rem' }}
                                     >
                                         {migrating ? 'Uploading...' : '🚀 Start Upload'}
                                     </button>
@@ -428,25 +441,28 @@ const SuperAdminDashboard = ({ onLogout }) => {
                                         onClick={() => handleMigration(null)} // Pass null to use default
                                         disabled={migrating}
                                         title="Restore from default backup"
-                                        style={{ fontSize: '0.9rem' }}
+                                        style={{ flex: 1, minWidth: '140px', fontSize: '0.9rem' }}
                                     >
                                         🔄 Restore Defaults
                                     </button>
                                 </div>
-
                             </div>
 
                             {/* Delete Section */}
-                            <div style={{ padding: '1rem', background: '#fff1f2', borderRadius: 'var(--radius-sm)', border: '1px solid #fecaca' }}>
-                                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', color: '#b91c1c' }}>🗑️ Delete All Data</h4>
-                                <p style={{ fontSize: '0.85rem', color: '#7f1d1d', marginBottom: '1rem' }}>
-                                    Permanently delete <strong>ALL</strong> {existingStudents.length} student records. This cannot be undone.
+                            <div style={{ padding: '1.5rem', background: '#fff1f2', borderRadius: 'var(--radius-sm)', border: '1px solid #fecaca' }}>
+                                <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', color: '#b91c1c', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    🗑️ Delete All Data
+                                </h4>
+                                <p style={{ fontSize: '0.85rem', color: '#7f1d1d', marginBottom: '1.5rem' }}>
+                                    Permanently delete <strong>ALL {existingStudents.length} student records</strong> from the database.
+                                    <br /><br />
+                                    This action cannot be undone. Students will lose access immediately.
                                 </p>
                                 <button
                                     className="btn btn-danger"
                                     onClick={handleDeleteAllStudents}
                                     disabled={migrating || existingStudents.length === 0}
-                                    style={{ width: '100%', fontSize: '0.9rem' }}
+                                    style={{ width: '100%', padding: '0.75rem', fontSize: '0.95rem' }}
                                 >
                                     🗑️ Delete All Students
                                 </button>
