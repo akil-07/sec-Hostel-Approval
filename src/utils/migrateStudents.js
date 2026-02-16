@@ -1700,22 +1700,30 @@ const STUDENT_DATA = [
     }
 ];
 
-export const migrateStudentsToFirebase = async (onProgress) => {
+export const migrateStudentsToFirebase = async (onProgress, customData = null) => {
     console.log('🚀 Starting student migration to Firebase...');
+
+    // Use custom data if provided, otherwise default to hardcoded STUDENT_DATA
+    const dataToMigrate = customData || STUDENT_DATA;
 
     let successCount = 0;
     let errorCount = 0;
     const errors = [];
 
-    for (let i = 0; i < STUDENT_DATA.length; i++) {
-        const student = STUDENT_DATA[i];
+    for (let i = 0; i < dataToMigrate.length; i++) {
+        const student = dataToMigrate[i];
+        if (!student.regNo) {
+            console.warn(`Skipping row ${i}: Missing regNo`, student);
+            continue;
+        }
+
         // Ensure ID is uppercase/trimmed if alphanumeric, though typically numeric
         const normalizedRegNo = student.regNo.toString().toUpperCase().trim();
 
         try {
             await setDoc(doc(db, 'students', normalizedRegNo), {
                 regNo: student.regNo,
-                universityRegNo: student.universityRegNo, // New Field
+                universityRegNo: student.universityRegNo || '', // New Field
                 name: student.name,
                 room: student.room,
                 dept: student.dept,
@@ -1730,7 +1738,7 @@ export const migrateStudentsToFirebase = async (onProgress) => {
             if (onProgress) {
                 onProgress({
                     current: i + 1,
-                    total: STUDENT_DATA.length,
+                    total: dataToMigrate.length,
                     successCount,
                     errorCount,
                     currentStudent: student.name
@@ -1747,7 +1755,7 @@ export const migrateStudentsToFirebase = async (onProgress) => {
         success: errorCount === 0,
         successCount,
         errorCount,
-        total: STUDENT_DATA.length,
+        total: dataToMigrate.length,
         errors
     };
 };

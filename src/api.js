@@ -339,3 +339,28 @@ export const deleteWarden = async (id) => {
         throw error;
     }
 };
+
+// Delete ALL students
+export const deleteAllStudents = async () => {
+    try {
+        const q = query(collection(db, "students"));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.size === 0) return { status: 'success', count: 0 };
+
+        const batch = writeBatch(db);
+        let count = 0;
+
+        snapshot.forEach((doc) => {
+            batch.delete(doc.ref);
+            count++;
+        });
+
+        await batch.commit();
+        console.log(`✅ Deleted ${count} students.`);
+        return { status: 'success', count };
+    } catch (error) {
+        console.error("❌ Error deleting all students:", error);
+        throw error;
+    }
+};

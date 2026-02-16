@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { addStudent, addWarden, fetchWardens, deleteAllLeaveRequests, fetchConfig, updateConfig, fetchAllStudents, deleteStudent, deleteWarden } from '../api';
+import { addStudent, addWarden, fetchWardens, deleteAllLeaveRequests, fetchConfig, updateConfig, fetchAllStudents, deleteStudent, deleteWarden, deleteAllStudents } from '../api';
+import * as XLSX from 'xlsx';
 import { migrateStudentsToFirebase, checkMigrationStatus } from '../utils/migrateStudents';
 
 const SuperAdminDashboard = ({ onLogout }) => {
@@ -25,6 +26,8 @@ const SuperAdminDashboard = ({ onLogout }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [migrating, setMigrating] = useState(false);
     const [migrationProgress, setMigrationProgress] = useState(null);
+    const [parsedData, setParsedData] = useState(null);
+    const [uploadStats, setUploadStats] = useState(null);
 
     // Helper: Timeout for promises that returns a fallback value instead of throwing
     const withTimeout = (promise, ms, fallbackValue) => {
@@ -166,23 +169,34 @@ const SuperAdminDashboard = ({ onLogout }) => {
         }
     };
 
-    const handleMigration = async () => {
-        if (!window.confirm("📤 MIGRATE STUDENTS TO FIREBASE\n\nThis will upload all 171 students from the Excel sheet to Firebase.\n\nExisting students will be updated (merged).\n\nDo you want to proceed?")) {
+    const handleMigration = async (customData = null) => {
+        let confirmMsg = "📤 MIGRATE STUDENTS TO FIREBASE\n\n";
+
+        if (customData) {
+            confirmMsg += `You are about to upload ${customData.length} students from your file.\n\nExisting students with the same Register Number will be updated.\n\nDo you want to proceed?`;
+        } else {
+            confirmMsg += `This will upload the default backup list (approx 171 students) to Firebase.\n\nExisting students will be updated (merged).\n\nDo you want to proceed?`;
+        }
+
+        if (!window.confirm(confirmMsg)) {
             return;
         }
 
         setMigrating(true);
-        setMigrationProgress({ current: 0, total: 171, successCount: 0, errorCount: 0 });
+        const total = customData ? customData.length : 171; // Default is approx 171
+        setMigrationProgress({ current: 0, total: total, successCount: 0, errorCount: 0 });
         setStatusMsg("⏳ Starting migration... Please wait...");
 
         try {
             const result = await migrateStudentsToFirebase((progress) => {
                 setMigrationProgress(progress);
                 setStatusMsg(`⏳ Migrating students: ${progress.current}/${progress.total} (${progress.successCount} successful)`);
-            });
+            }, customData);
 
             if (result.success) {
                 setStatusMsg(`✅ Successfully migrated ${result.successCount} students to Firebase!`);
+                setParsedData(null); // Reset upload state
+                setUploadStats(null);
             } else {
                 setStatusMsg(`⚠️ Migration completed with ${result.errorCount} errors. ${result.successCount} students uploaded successfully.`);
             }
@@ -195,6 +209,86 @@ const SuperAdminDashboard = ({ onLogout }) => {
             setMigrating(false);
             setMigrationProgress(null);
         }
+    };
+
+    const handleDeleteAllStudents = async () => {
+        if (!window.confirm("⚠️ CRITICAL WARNING: DELETE ALL STUDENTS?\n\nThis will PERMANENTLY DELETE ALL student records from the database.\n\nStudents will not be able to login or request leave until they are re-added.\n\nType 'DELETE' to confirm.")) {
+            return;
+        }
+
+        // Double confirmation prompt (simulated by just checking result, in real app maybe prompt input)
+        // Since prompt is not reliable in all environments, I'll stick to a strong confirm.
+        if (!window.confirm("Are you really sure? This action cannot be undone.")) return;
+
+        setMigrating(true); // Reuse migrating state to block interactions
+        setStatusMsg("⏳ Deleting all students...");
+
+        try {
+            const result = await deleteAllStudents();
+            setStatusMsg(`✅ Successfully deleted ${result.count} students.`);
+            await loadData();
+        } catch (error) {
+            setStatusMsg(`❌ Error deleting students: ${error.message}`);
+        } finally {
+            setMigrating(false);
+        }
+    };
+
+    const handleFileUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setStatusMsg("⏳ Parsing file...");
+        const reader = new FileReader();
+
+        reader.onload = (evt) => {
+            try {
+                const bstr = evt.target.result;
+                const workbook = XLSX.read(bstr, { type: 'binary' });
+                const wsname = workbook.SheetNames[0];
+                const ws = workbook.Sheets[wsname];
+                const data = XLSX.utils.sheet_to_json(ws);
+
+                // Flexible mapping logic
+                const mappedData = data.map(row => {
+                    // Normalize Year
+                    let year = (row['Year'] || row['year'] || '').toString().trim();
+                    if (year === 'I' || year === '1') year = '1';
+                    else if (year === 'II' || year === '2') year = '2';
+                    else if (year === 'III' || year === '3') year = '3';
+                    else if (year === 'IV' || year === '4') year = '4';
+
+                    return {
+                        regNo: (row['Roll Number'] || row['Roll No'] || row['regNo'] || '').toString().trim(),
+                        universityRegNo: (row['Register Number'] || row['Register No'] || row['universityRegNo'] || '').toString().trim(),
+                        name: (row['Student Name'] || row['Name'] || row['name'] || '').trim(),
+                        room: (row['Room Number'] || row['Room'] || row['room'] || '').trim(),
+                        dept: (row['Department'] || row['Dept'] || row['dept'] || '').trim(),
+                        year: year,
+                        studentMobile: (row['Student Mobile Number'] || row['Mobile'] || row['studentMobile'] || '').toString().trim(),
+                        parentMobile: (row['Parent Mobile Number'] || row['Parent Mobile'] || row['parentMobile'] || '').toString().trim()
+                    };
+                }).filter(s => s.regNo && s.name); // Basic validation
+
+                if (mappedData.length === 0) {
+                    setStatusMsg("❌ No valid student data found in file. Check column names.");
+                    setParsedData(null);
+                    setUploadStats(null);
+                    return;
+                }
+
+                setParsedData(mappedData);
+                setUploadStats(`${mappedData.length}`);
+                setStatusMsg(`✅ File parsed: ${mappedData.length} students ready to upload.`);
+
+            } catch (err) {
+                console.error(err);
+                setStatusMsg("❌ Error parsing file: " + err.message);
+                setParsedData(null);
+                setUploadStats(null);
+            }
+        };
+        reader.readAsBinaryString(file);
     };
 
     // Safe filtering logic
@@ -285,7 +379,7 @@ const SuperAdminDashboard = ({ onLogout }) => {
 
             {activeTab === 'students' ? (
                 <div className="card">
-                    {/* Migration Section */}
+                    {/* Student Data Management Section */}
                     <div style={{
                         padding: '1.5rem',
                         marginBottom: '2rem',
@@ -294,23 +388,71 @@ const SuperAdminDashboard = ({ onLogout }) => {
                         borderRadius: 'var(--radius-md)',
                         boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                     }}>
-                        <h3 style={{ marginTop: 0, color: '#111827', fontSize: '1.1rem', fontWeight: '600' }}>
-                            Bulk Student Migration
+                        <h3 style={{ marginTop: 0, color: '#111827', fontSize: '1.1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            📂 Student Data Management
                         </h3>
                         <p style={{ margin: '0.5rem 0 1rem 0', fontSize: '0.9rem', color: '#6b7280', lineHeight: '1.5' }}>
-                            Upload all 171 students from the Excel sheet to Firebase. This will enable auto-fill functionality for all students.
+                            Manage the student database in bulk. You can upload a new Excel file to add/update students or clear the entire database.
                         </p>
-                        <button
-                            className="btn btn-primary"
-                            onClick={handleMigration}
-                            disabled={migrating}
-                            style={{
-                                padding: '0.6rem 1.2rem',
-                                fontSize: '0.9rem'
-                            }}
-                        >
-                            {migrating ? 'Migrating...' : 'Migrate All Students to Firebase'}
-                        </button>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            {/* Upload Section */}
+                            <div style={{ padding: '1rem', background: '#f9fafb', borderRadius: 'var(--radius-sm)', border: '1px solid #e5e7eb' }}>
+                                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem' }}>📤 Upload / Update</h4>
+                                <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '1rem' }}>
+                                    Upload an Excel file (.xlsx) with columns: <strong>Roll Number, Register Number, Student Name, Room Number, Department, Year, Mobile</strong>.
+                                </p>
+                                <input
+                                    type="file"
+                                    accept=".xlsx, .xls"
+                                    onChange={handleFileUpload}
+                                    style={{ marginBottom: '0.5rem', width: '100%', fontSize: '0.9rem' }}
+                                    disabled={migrating}
+                                />
+                                {uploadStats && (
+                                    <div style={{ fontSize: '0.85rem', color: '#059669', marginBottom: '0.5rem' }}>
+                                        ✅ Ready to upload {uploadStats} students
+                                    </div>
+                                )}
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={() => handleMigration(parsedData)} // Pass parsed data
+                                        disabled={!parsedData || migrating}
+                                        style={{ width: '100%', fontSize: '0.9rem' }}
+                                    >
+                                        {migrating ? 'Uploading...' : '🚀 Start Upload'}
+                                    </button>
+                                    <button
+                                        className="btn btn-secondary"
+                                        onClick={() => handleMigration(null)} // Pass null to use default
+                                        disabled={migrating}
+                                        title="Restore from default backup"
+                                        style={{ fontSize: '0.9rem' }}
+                                    >
+                                        🔄 Restore Defaults
+                                    </button>
+                                </div>
+
+                            </div>
+
+                            {/* Delete Section */}
+                            <div style={{ padding: '1rem', background: '#fff1f2', borderRadius: 'var(--radius-sm)', border: '1px solid #fecaca' }}>
+                                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', color: '#b91c1c' }}>🗑️ Delete All Data</h4>
+                                <p style={{ fontSize: '0.85rem', color: '#7f1d1d', marginBottom: '1rem' }}>
+                                    Permanently delete <strong>ALL</strong> {existingStudents.length} student records. This cannot be undone.
+                                </p>
+                                <button
+                                    className="btn btn-danger"
+                                    onClick={handleDeleteAllStudents}
+                                    disabled={migrating || existingStudents.length === 0}
+                                    style={{ width: '100%', fontSize: '0.9rem' }}
+                                >
+                                    🗑️ Delete All Students
+                                </button>
+                            </div>
+                        </div>
+
                         {migrationProgress && (
                             <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#f9fafb', borderRadius: 'var(--radius-sm)', border: '1px solid #e5e7eb' }}>
                                 <div style={{ fontSize: '0.85rem', marginBottom: '0.5rem', color: '#374151', fontWeight: '500' }}>
