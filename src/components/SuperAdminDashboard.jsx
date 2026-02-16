@@ -215,9 +215,12 @@ const SuperAdminDashboard = ({ onLogout }) => {
     return (
         <div className="container">
             <header className="page-header">
-                <div>
-                    <h1 className="page-title">Super Admin Portal</h1>
-                    <p className="page-subtitle">Manage system users and configurations</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <img src="/logo.png" alt="Logo" style={{ height: '50px', borderRadius: '5px' }} />
+                    <div>
+                        <h1 className="page-title">Super Admin Portal</h1>
+                        <p className="page-subtitle">Manage system users and configurations</p>
+                    </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button className="btn btn-secondary" onClick={loadData} title="Retry Sync">🔄 Sync</button>

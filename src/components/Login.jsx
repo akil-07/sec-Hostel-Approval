@@ -150,7 +150,8 @@ const Login = ({ onLogin }) => {
         }}>
             <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                    <h2 style={{ marginBottom: '0.5rem', color: 'var(--primary)' }}>Hostel Portal</h2>
+                    <img src="/logo.png" alt="NBF Logo" style={{ height: '80px', marginBottom: '1rem', borderRadius: '8px' }} />
+                    <h2 style={{ marginBottom: '0.5rem', color: 'var(--primary)', margin: 0 }}>Hostel Portal</h2>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Please sign in to continue</p>
                 </div>
 

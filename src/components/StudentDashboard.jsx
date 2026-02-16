@@ -36,9 +36,12 @@ const StudentDashboard = ({ user, onLogout }) => {
     return (
         <div className="container">
             <header className="page-header">
-                <div>
-                    <h1 className="page-title">Student Portal</h1>
-                    <p className="page-subtitle">Welcome, <span style={{ color: 'var(--primary)' }}>{user.identifier}</span></p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <img src="/logo.png" alt="Logo" style={{ height: '50px', borderRadius: '5px' }} />
+                    <div>
+                        <h1 className="page-title">Student Portal</h1>
+                        <p className="page-subtitle">Welcome, <span style={{ color: 'var(--primary)' }}>{user.identifier}</span></p>
+                    </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
                     <button className="btn btn-secondary" onClick={loadData}>Refresh</button>
