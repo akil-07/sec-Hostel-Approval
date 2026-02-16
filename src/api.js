@@ -122,6 +122,7 @@ export const submitRequest = async (formData) => {
 
         const firestoreData = {
             'Register Number': formData.regNo,
+            'University Register No': formData.universityRegNo,
             'Student Name': formData.name,
             'Year': formData.year,
             'Dept': formData.dept,

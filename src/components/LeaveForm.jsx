@@ -10,6 +10,7 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
 
     const [formData, setFormData] = useState({
         regNo: regNo,
+        universityRegNo: '', // New field for mapped 'Register Number'
         name: '',
         year: '',
         dept: '',
@@ -61,6 +62,7 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
                 setFormData(prev => ({
                     ...prev,
                     name: savedProfile.name || prev.name,
+                    universityRegNo: savedProfile.universityRegNo || prev.universityRegNo,
                     room: savedProfile.room || prev.room,
                     year: savedProfile.year || prev.year,
                     dept: savedProfile.dept || prev.dept,
@@ -143,6 +145,7 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
         // Save Profile for next time (Add "Default" behavior)
         const profileData = {
             regNo: formData.regNo,
+            universityRegNo: formData.universityRegNo,
             name: formData.name,
             year: formData.year,
             dept: formData.dept,
@@ -216,16 +219,20 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
 
                 <div className="grid-2">
                     <div>
-                        <label>Register Number</label>
+                        <label>Register Number (Roll No)</label>
                         <input name="regNo" value={formData.regNo} readOnly style={{ opacity: 0.7, cursor: 'not-allowed' }} />
                     </div>
                     <div>
+                        <label>University Register No</label>
+                        <input name="universityRegNo" value={formData.universityRegNo} readOnly style={{ opacity: 0.7, cursor: 'not-allowed' }} placeholder="Auto-filled" />
+                    </div>
+                    <div>
                         <label>Student Name</label>
-                        <input name="name" value={formData.name} placeholder="Full Name" onChange={handleChange} required />
+                        <input name="name" value={formData.name} placeholder="Full Name" onChange={handleChange} required readOnly style={{ opacity: 0.7, cursor: 'not-allowed', backgroundColor: 'var(--bg-secondary)' }} />
                     </div>
                     <div>
                         <label>Year of Study</label>
-                        <select name="year" value={formData.year} onChange={handleChange} required>
+                        <select name="year" value={formData.year} onChange={handleChange} required disabled style={{ opacity: 0.7, cursor: 'not-allowed', backgroundColor: 'var(--bg-secondary)' }}>
                             <option value="">Select Year</option>
                             <option value="1">1st Year</option>
                             <option value="2">2nd Year</option>
@@ -235,19 +242,19 @@ const LeaveForm = ({ regNo, onSubmit, onCancel }) => {
                     </div>
                     <div>
                         <label>Department</label>
-                        <input name="dept" value={formData.dept} placeholder="e.g. CSE" onChange={handleChange} required />
+                        <input name="dept" value={formData.dept} placeholder="e.g. CSE" onChange={handleChange} required readOnly style={{ opacity: 0.7, cursor: 'not-allowed', backgroundColor: 'var(--bg-secondary)' }} />
                     </div>
                     <div>
                         <label>Student Mobile</label>
-                        <input name="studentMobile" value={formData.studentMobile} placeholder="Number" type="tel" onChange={handleChange} required />
+                        <input name="studentMobile" value={formData.studentMobile} placeholder="Number" type="tel" onChange={handleChange} required readOnly style={{ opacity: 0.7, cursor: 'not-allowed', backgroundColor: 'var(--bg-secondary)' }} />
                     </div>
                     <div>
                         <label>Parent Mobile</label>
-                        <input name="parentMobile" value={formData.parentMobile} placeholder="Number" type="tel" onChange={handleChange} required />
+                        <input name="parentMobile" value={formData.parentMobile} placeholder="Number" type="tel" onChange={handleChange} required readOnly style={{ opacity: 0.7, cursor: 'not-allowed', backgroundColor: 'var(--bg-secondary)' }} />
                     </div>
                     <div>
                         <label>Room Number</label>
-                        <input name="room" value={formData.room} placeholder="Room No" onChange={handleChange} required />
+                        <input name="room" value={formData.room} placeholder="Room No" onChange={handleChange} required readOnly style={{ opacity: 0.7, cursor: 'not-allowed', backgroundColor: 'var(--bg-secondary)' }} />
                     </div>
                 </div>
 

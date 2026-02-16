@@ -156,7 +156,7 @@ const Login = ({ onLogin }) => {
 
                 <form onSubmit={handleSubmit}>
                     <div className="mb-2">
-                        <label htmlFor="regNo">Register Number</label>
+                        <label htmlFor="regNo">Register Number (Roll No)</label>
                         <input
                             id="regNo"
                             type="text"
