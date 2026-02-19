@@ -16,6 +16,8 @@ const SuperAdminDashboard = ({ onLogout }) => {
     });
     const [wardenForm, setWardenForm] = useState({
         name: '',
+        user_id: '',
+        email: '',
         password: ''
     });
     const [config, setConfig] = useState({ is24HourRuleEnabled: false });
@@ -118,7 +120,7 @@ const SuperAdminDashboard = ({ onLogout }) => {
         try {
             await addWarden(wardenForm);
             setStatusMsg(`✅ Warden ${wardenForm.name} added successfully!`);
-            setWardenForm({ name: '', password: '' });
+            setWardenForm({ name: '', user_id: '', email: '', password: '' });
             loadData(); // Refresh list
         } catch (error) {
             setStatusMsg(`❌ Error adding warden: ${error.message}`);
@@ -610,6 +612,26 @@ const SuperAdminDashboard = ({ onLogout }) => {
                                 />
                             </div>
                             <div className="mb-2">
+                                <label>Login ID (Access Code)</label>
+                                <input
+                                    value={wardenForm.user_id}
+                                    onChange={(e) => setWardenForm({ ...wardenForm, user_id: e.target.value.trim() })}
+                                    placeholder="e.g. warden01"
+                                    required
+                                />
+                                <small style={{ color: 'var(--text-secondary)' }}>This ID will be used to login.</small>
+                            </div>
+                            <div className="mb-2">
+                                <label>Email Address</label>
+                                <input
+                                    type="email"
+                                    value={wardenForm.email}
+                                    onChange={(e) => setWardenForm({ ...wardenForm, email: e.target.value })}
+                                    placeholder="e.g. warden@college.edu"
+                                    required
+                                />
+                            </div>
+                            <div className="mb-2">
                                 <label>Password</label>
                                 <input
                                     value={wardenForm.password}
@@ -628,9 +650,22 @@ const SuperAdminDashboard = ({ onLogout }) => {
                     {existingWardens.length > 0 ? (
                         <ul style={{ listStyle: 'none', padding: 0 }}>
                             {existingWardens.map((w, idx) => (
-                                <li key={idx} style={{ padding: '0.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>👤 <strong>{w.name}</strong></span>
-                                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Password: {w.password}</span>
+                                <li key={idx} style={{ padding: '0.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', flexDirection: 'column' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span>👤 <strong>{w.name}</strong></span>
+                                        <button
+                                            className="btn btn-danger"
+                                            style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem' }}
+                                            onClick={() => handleDeleteWarden(w.id, w.name)}
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                                        <span>🔑 ID: <strong>{w.user_id || 'N/A'}</strong></span>
+                                        <span>📛 Pass: {w.password}</span>
+                                        <span style={{ gridColumn: 'span 2' }}>📧 {w.email || 'No Email'}</span>
+                                    </div>
                                 </li>
                             ))}
                         </ul>

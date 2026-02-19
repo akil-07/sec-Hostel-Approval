@@ -39,11 +39,20 @@ const Login = ({ onLogin }) => {
         }
 
         // Check dynamic wardens from Firebase
-        const dynamicWarden = availableWardens.find(w =>
+        // 1. Check for explicit user_id first (new method)
+        const dynamicWardenById = availableWardens.find(w =>
+            w.user_id && normalized === w.user_id.toLowerCase()
+        );
+        if (dynamicWardenById) {
+            return { type: 'warden', identifier: dynamicWardenById.name };
+        }
+
+        // 2. Fallback to implicit name check (old method for backward compatibility)
+        const dynamicWardenByName = availableWardens.find(w =>
             normalized === `${w.name.toLowerCase().substring(0, 4)}1234`
         );
-        if (dynamicWarden) {
-            return { type: 'warden', identifier: dynamicWarden.name };
+        if (dynamicWardenByName) {
+            return { type: 'warden', identifier: dynamicWardenByName.name };
         }
 
         // Default to student
@@ -58,8 +67,8 @@ const Login = ({ onLogin }) => {
 
             // Check if the email is authorized as a warden
             const authorizedWardenEmails = [
-                'akilsudhagar7@gmail.com',  // Pavithrakannan
-                'akilsudhagar19@gmail.com', // Somu
+                'apavithrakannan@saveetha.ac.in',  // Pavithrakannan
+                'akilsudhagar7@gmail.com', // Somu
                 'akilsudhagar69@gmail.com'  // Raguram
             ];
 
@@ -73,9 +82,9 @@ const Login = ({ onLogin }) => {
                 const dynamicWarden = availableWardens.find(w => w.email === user.email);
                 if (dynamicWarden) {
                     wardenName = dynamicWarden.name;
-                } else if (user.email === 'akilsudhagar7@gmail.com') {
+                } else if (user.email === 'apavithrakannan@saveetha.ac.in') {
                     wardenName = 'Pavithrakannan';
-                } else if (user.email === 'akilsudhagar19@gmail.com') {
+                } else if (user.email === 'akilsudhagar7@gmail.com') {
                     wardenName = 'Somu';
                 } else if (user.email === 'akilsudhagar69@gmail.com') {
                     wardenName = 'Raguram';

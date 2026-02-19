@@ -266,7 +266,7 @@ const WardenDashboard = ({ user, onLogout }) => {
                     <img src="/logo.png" alt="Logo" style={{ height: '50px', borderRadius: '5px' }} />
                     <div>
                         <h1 className="page-title">Warden Portal</h1>
-                        <p className="page-subtitle">Manage student leave requests</p>
+                        <p className="page-subtitle">Welcome, <strong style={{ color: 'var(--primary)' }}>{user.identifier}</strong></p>
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
